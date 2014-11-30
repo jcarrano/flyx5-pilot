@@ -4,6 +4,7 @@ syntax: glob
 *.o
 *.la
 *.lo
+*.a
 *.gch
 a.out
 *.pfd
@@ -12,6 +13,15 @@ a.out
 *.pdf
 *.axf
 .libs
+*.d
+*.ds
+*.dss
+
+*.map
+*.sym
+*.hex
+*.bin
+*.lss
 
 syntax: regexp
 .*\#.*\#$
