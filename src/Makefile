@@ -24,6 +24,8 @@ IPATH=-I${ROOT}/ext_libs
 LDPATH=-L${ROOT}/ext_libs/driverlib
 LIBRARIES=-ldrivers
 
+DEBUG_FLAGS=-dA -g3
+
 # Include the common make definitions.
 #
 include ${TOOLSPATH}/Makefile.tiva

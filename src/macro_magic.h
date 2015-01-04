@@ -13,6 +13,10 @@
 #ifndef MACRO_MAGIC_H
 #define MACRO_MAGIC_H
 
+/* discard arguments */
+
+#define MDUMMY(p)
+
 /* Count the number of arguments
  * This macro expands to the number of arguments passed.
  * Supports a maximum of 20 parameters.
@@ -52,14 +56,16 @@
  *
  */
 
-#define _POLYARGS2(_1,_2, F, ...) F(_1,_2)
-#define _POLYARGS3(_1,_2,_3, F, ...) F(_1,_2,_3)
-#define _POLYARGS4(_1,_2,_3,_4, F,...) F(_1,_2,_3,_4)
-#define _POLYARGS5(_1,_2,_3,_4,_5, F,...) F(_1,_2,_3,_4,_5)
-#define _POLYARGS6(_1,_2,_3,_4,_5,_6, F,...) F(_1,_2,_3,_4,_5,_6)
-#define _POLYARGS7(_1,_2,_3,_4,_5,_6,_7, F,...) F(_1,_2,_3,_4,_5,_6,_7)
-#define _POLYARGS8(_1,_2,_3,_4,_5,_6,_7,_8, F,...) F(_1,_2,_3,_4,_5,_6,_7,_8)
-#define _POLYARGS9(_1,_2,_3,_4,_5,_6,_7,_8,_9, F,...) F(_1,_2,_3,_4,_5,_6,_7,_8,_9)
+/* MDUMMY is used to suppress warnings caused by not using all arguments */
+
+#define _POLYARGS2(_1,_2, F, ...) F(_1,_2) MDUMMY((__VA_ARGS__))
+#define _POLYARGS3(_1,_2,_3, F, ...) F(_1,_2,_3) MDUMMY((__VA_ARGS__))
+#define _POLYARGS4(_1,_2,_3,_4, F,...) F(_1,_2,_3,_4) MDUMMY((__VA_ARGS__))
+#define _POLYARGS5(_1,_2,_3,_4,_5, F,...) F(_1,_2,_3,_4,_5) MDUMMY((__VA_ARGS__))
+#define _POLYARGS6(_1,_2,_3,_4,_5,_6, F,...) F(_1,_2,_3,_4,_5,_6) MDUMMY((__VA_ARGS__))
+#define _POLYARGS7(_1,_2,_3,_4,_5,_6,_7, F,...) F(_1,_2,_3,_4,_5,_6,_7) MDUMMY((__VA_ARGS__))
+#define _POLYARGS8(_1,_2,_3,_4,_5,_6,_7,_8, F,...) F(_1,_2,_3,_4,_5,_6,_7,_8) MDUMMY((__VA_ARGS__))
+#define _POLYARGS9(_1,_2,_3,_4,_5,_6,_7,_8,_9, F,...) F(_1,_2,_3,_4,_5,_6,_7,_8,_9) MDUMMY((__VA_ARGS__))
 
 /* Glue: use this macros to create macros "on the fly"
  */
