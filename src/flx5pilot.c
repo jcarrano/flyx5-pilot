@@ -39,6 +39,27 @@ void UARTStringPut(uint32_t ui32Base, const char *s)
     }
 }
 
+/**
+ * Send a string to the UART, blocks execution until done.
+ *
+ * String must be null terminated.
+ */
+void UARTIntPut(uint32_t ui32Base, int x)
+{
+#define INT_MAX_S_LEN 32
+    char s[INT_MAX_S_LEN];
+    int i = INT_MAX_S_LEN-2;
+
+    s[INT_MAX_S_LEN-1] = 0;
+
+    while (x) {
+        s[i--] = x%10 + '0';
+        x = x/10;
+    }
+
+    UARTStringPut(ui32Base, s + i + 1);
+}
+
 int main(void)
 {
     init_clock();
@@ -63,6 +84,11 @@ int main(void)
 
 #define HELLO_TXT "Hello, nigga!\r\n"
     UARTStringPut(BASE_PERIPH(UART_DEBUG), HELLO_TXT);
+#define CLK_TXT "Clock speed is: "
+#define ENDL "\r\n"
+    UARTStringPut(BASE_PERIPH(UART_DEBUG), CLK_TXT);
+    UARTIntPut(BASE_PERIPH(UART_DEBUG), R_(SysCtlClockGet)());
+    UARTStringPut(BASE_PERIPH(UART_DEBUG), ENDL);
 
     //
     // Loop forever.

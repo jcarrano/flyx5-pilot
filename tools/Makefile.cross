@@ -85,7 +85,7 @@ ENTRY_POINT ?= _start
 
 CPPFLAGS += $(IPATH)
 CFLAGS += $(CPART) $(DEBUG_FLAGS) $(CPPFLAGS) $(OFLAGS) \
-	-pedantic -Wall \
+	-pedantic -Wall -fno-stack-protector\
 	-pipe \
 	-std=gnu99 \
 	-ffunction-sections -fdata-sections

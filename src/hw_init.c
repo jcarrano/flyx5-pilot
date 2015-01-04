@@ -106,8 +106,7 @@ void init_clock()
 	 * Linear-access is not affected due to pre-fetching. */
 
 	R_(SysCtlClockSet)(
-		  SYSCTL_SYSDIV_1		/* */
-		| SYSCTL_USE_PLL		/* Use the PLL so we can get a
+		  SYSCTL_USE_PLL		/* Use the PLL so we can get a
 							higher frequency */
 		| SYSCTL_OSC_MAIN		/* Use the main oscillator */
 		| SYSCTL_SYSDIV_2_5		/* 400MHz / 2.5 / 2 = 80MHz */
