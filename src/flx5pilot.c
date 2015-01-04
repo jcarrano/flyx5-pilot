@@ -7,13 +7,12 @@
  *              Nicolás venturo.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "common.h"
 #include "inc/hw_memmap.h"
-#include "driverlib/debug.h"
-#include "driverlib/gpio.h"
-#include "driverlib/rom.h"
 #include "driverlib/sysctl.h"
+#include "driverlib/uart.h"
+#include "flyx5_hw.h"
+#include "hw_init.h"
 
 /**
  * This error routine that is called if the driver library encounters an error.
@@ -25,43 +24,53 @@ void __error__(char *filename, uint32_t line)
 }
 #endif
 
+/**
+ * Send a string to the UART, blocks execution until done.
+ *
+ * String must be null terminated.
+ */
+void UARTStringPut(uint32_t ui32Base, const char *s)
+{
+    char c;
+
+    while((c = *s) != '\0') {
+        R_(UARTCharPut)(ui32Base, c);
+        s++;
+    }
+}
 
 int main(void)
 {
-    //
-    // Enable the GPIO module.
-    //
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
-    SysCtlDelay(1);
+    init_clock();
 
-    //
-    // Configure PA1 as an output.
-    //
-    GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, GPIO_PIN_1);
+    //init_pins();
+    /* Initialise all ports */
+    init_all_gpio();
+
+    if (!running_under_debugger()) {
+            SysCtlDelay(10000);
+            // init_jtag_muxed_pins();
+    }
+
+    /* Initialize port */
+    ENABLE_AND_RESET(UART_DEBUG);
+    CFG_PIN(DEBUG_RX);
+    CFG_PIN(DEBUG_TX);
+
+    R_(UARTConfigSetExpClk)(BASE_PERIPH(UART_DEBUG) , R_(SysCtlClockGet)(), 115200,
+                            (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+                             UART_CONFIG_PAR_NONE));
+
+#define HELLO_TXT "Hello, nigga!\r\n"
+    UARTStringPut(BASE_PERIPH(UART_DEBUG), HELLO_TXT);
 
     //
     // Loop forever.
     //
     while(1)
     {
-        //
-        // Set the GPIO high.
-        //
-        GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_1, GPIO_PIN_1);
-
-        //
-        // Delay for a while.
-        //
-        SysCtlDelay(1000000);
-
-        //
-        // Set the GPIO low.
-        //
-        GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_1, 0);
-
-        //
-        // Delay for a while.
-        //
-        SysCtlDelay(1000000);
+        int c = R_(UARTCharGet)(BASE_PERIPH(UART_DEBUG));
+        c = (c <= 'z' && c >= 'a')? c - 'a' + 'A' : c;
+        R_(UARTCharPut)(BASE_PERIPH(UART_DEBUG), c);
     }
 }

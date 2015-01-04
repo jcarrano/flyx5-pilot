@@ -99,5 +99,12 @@ typedef union {
  */
 #define DIV_CEIL(a,b) (((a) % (b) == 0) ? ((a)/(b)) : (((a)/(b))+1))
 
+/* Use this macro to select between rom and non-rom functions */
+
+#ifdef USE_ROM_FUNCTIONS
+#define R_(f) ROM_##f
+#else
+#define R_(f) f
+#endif
 
 #endif /* COMMON_H */

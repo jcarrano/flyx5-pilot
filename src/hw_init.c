@@ -4,38 +4,25 @@
  * @author Juan I Carrano.
  */
 
-#include "flyx5_pin.h"
-#include <stdbool.h>
+#include "common.h"
+#include <inc/hw_types.h>
+#include <inc/hw_nvic.h>
+#include <driverlib/sysctl.h>
+#include "hw_init.h"
+#include "flyx5_hw.h"
 
-/**
- * Return true if running under debugger control.
- *
- * This function only works in Cortex-M3 and later.
- *
- * @see http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.faqs/ka14536.html
- */
-static bool running_under_debugger()
+bool running_under_debugger()
 {
-#define C_DEBUGEN_BIT 0
-	return HWREGBITW(NVIC_DBG_CTRL, C_DEBUGEN_BIT);
+	return (HWREGB(NVIC_DBG_CTRL)&NVIC_DBG_CTRL_C_DEBUGEN) ? true : false;
 }
 
-/**
- * Initialise the pins that are shared with the jtag interface.
- *
- * After this pins are configured, the chip cannot longer be accesed by jtag
- * (until the pins are reverted to the jtag function).
- *
- * On reset, this function must be called after a small delay, to allow the
- * debugger to access the chip.
- */
 void init_jtag_muxed_pins()
 {
 	/* Unlock jtag pins */
 	GPIO_UNLOCK(BUTTON_1);
-	gpio_commit_ctrl(PORT_OF(BUTTON_1), PIN_N(BUTTON_1));
-	gpio_commit_ctrl(PORT_OF(LED_A), PIN_N(LED_A));
-	gpio_commit_ctrl(PORT_OF(LED_B), PIN_N(LED_B));
+	gpio_commit_ctrl(PORT_OF(BUTTON_1), PIN_N(BUTTON_1), Unlock);
+	gpio_commit_ctrl(PORT_OF(LED_A), PIN_N(LED_A), Unlock);
+	gpio_commit_ctrl(PORT_OF(LED_B), PIN_N(LED_B), Unlock);
 
 	/* Modify pins */
 	CFG_PIN(	BUTTON_1	)
@@ -46,9 +33,6 @@ void init_jtag_muxed_pins()
 	GPIO_LOCK(BUTTON_1);
 }
 
-/**
- * Initialise all other pins.
- */
 void init_pins()
 {
 	CFG_PIN(	BUTTON_2	)
@@ -76,14 +60,14 @@ void init_pins()
 	CFG_PIN(	ESC_MISO	)
 	CFG_PIN(	ESC_MOSI	)
 
-	CFG_PIN(	ESC_PWM(0)	)
-	CFG_PIN(	ESC_PWM(1)	)
-	CFG_PIN(	ESC_PWM(2)	)
-	CFG_PIN(	ESC_PWM(3)	)
-	CFG_PIN(	ESC_PWM(4)	)
-	CFG_PIN(	ESC_PWM(5)	)
-	CFG_PIN(	ESC_PWM(6)	)
-	CFG_PIN(	ESC_PWM(7)	)
+	CFG_PIN(	ESC_PWM0	)
+	CFG_PIN(	ESC_PWM1	)
+	CFG_PIN(	ESC_PWM2	)
+	CFG_PIN(	ESC_PWM3	)
+	CFG_PIN(	ESC_PWM4	)
+	CFG_PIN(	ESC_PWM5	)
+	CFG_PIN(	ESC_PWM6	)
+	CFG_PIN(	ESC_PWM7	)
 
 	CFG_PIN(	AUX_SCK		)
 	CFG_PIN(	SDCARD_SS	)
@@ -101,4 +85,37 @@ void init_pins()
 	CFG_PIN(	RC_ALTITUDE     )
 	CFG_PIN(	RC_AUX1         )
 	CFG_PIN(	RC_AUX2         )
+}
+
+void init_all_gpio()
+{
+	R_(SysCtlPeripheralEnable)(SYS_PERIPH(GPIOA));
+	R_(SysCtlPeripheralEnable)(SYS_PERIPH(GPIOB));
+	R_(SysCtlPeripheralEnable)(SYS_PERIPH(GPIOC));
+	R_(SysCtlPeripheralEnable)(SYS_PERIPH(GPIOD));
+	R_(SysCtlPeripheralEnable)(SYS_PERIPH(GPIOE));
+	R_(SysCtlPeripheralEnable)(SYS_PERIPH(GPIOF));
+}
+
+void init_clock()
+{
+	/* The following parameters should provide us a 80MHz clock
+	 * Note that abobe 40MHz, the flash controller operates at half the
+	 * system clock, so random-access throughput suffers and is only
+	 * recovered at 80MHz.
+	 * Linear-access is not affected due to pre-fetching. */
+
+	R_(SysCtlClockSet)(
+		  SYSCTL_SYSDIV_1		/* */
+		| SYSCTL_USE_PLL		/* Use the PLL so we can get a
+							higher frequency */
+		| SYSCTL_OSC_MAIN		/* Use the main oscillator */
+		| SYSCTL_SYSDIV_2_5		/* 400MHz / 2.5 / 2 = 80MHz */
+		| GLUE3(SYSCTL_XTAL_,XTAL_MHZ,MHZ)	/* The board xtal */
+		);
+
+	/* The ADC **MUST** be clocked with 16 MHz
+	 * We will use the PLL divided by 25. */
+
+	/* TODO: setup ADC clock */
 }
