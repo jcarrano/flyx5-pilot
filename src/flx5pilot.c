@@ -14,6 +14,8 @@
 #include "flyx5_hw.h"
 #include "hw_init.h"
 
+#include "peripheral/buzzer.h"
+
 /**
  * This error routine that is called if the driver library encounters an error.
  */
@@ -62,6 +64,8 @@ void UARTIntPut(uint32_t ui32Base, int x)
 
 int main(void)
 {
+    init_failsafe();
+
     init_clock();
 
     //init_pins();
@@ -69,8 +73,8 @@ int main(void)
     init_all_gpio();
 
     if (!running_under_debugger()) {
-            SysCtlDelay(10000);
-            // init_jtag_muxed_pins();
+            SysCtlDelay(10000000);
+            init_jtag_muxed_pins();
     }
 
     /* Initialize port */
@@ -89,6 +93,9 @@ int main(void)
     UARTStringPut(BASE_PERIPH(UART_DEBUG), CLK_TXT);
     UARTIntPut(BASE_PERIPH(UART_DEBUG), R_(SysCtlClockGet)());
     UARTStringPut(BASE_PERIPH(UART_DEBUG), ENDL);
+
+    buzzer_init();
+    buzzer_play_note();
 
     //
     // Loop forever.

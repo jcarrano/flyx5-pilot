@@ -67,6 +67,18 @@
 #define _POLYARGS8(_1,_2,_3,_4,_5,_6,_7,_8, F,...) F(_1,_2,_3,_4,_5,_6,_7,_8) MDUMMY((__VA_ARGS__))
 #define _POLYARGS9(_1,_2,_3,_4,_5,_6,_7,_8,_9, F,...) F(_1,_2,_3,_4,_5,_6,_7,_8,_9) MDUMMY((__VA_ARGS__))
 
+/* Get the Nth argument */
+
+#define _1st(k, ...) k MDUMMY((__VA_ARGS__))
+#define _2nd(_1, k, ...) k MDUMMY((__VA_ARGS__))
+#define _3rd(_1, _2, k, ...) k MDUMMY((__VA_ARGS__))
+#define _4th(_1, _2, _3, k, ...) k MDUMMY((__VA_ARGS__))
+#define _5th(_1, _2, _3, _4, k, ...) k MDUMMY((__VA_ARGS__))
+#define _6th(_1, _2, _3, _4, _5, k, ...) k MDUMMY((__VA_ARGS__))
+#define _7th(_1, _2, _3, _4, _5, _6, k, ...) k MDUMMY((__VA_ARGS__))
+#define _8th(_1, _2, _3, _4, _5, _6, _7, k, ...) k MDUMMY((__VA_ARGS__))
+#define _9th(_1, _2, _3, _4, _5, _6, _7, _8, k, ...) k MDUMMY((__VA_ARGS__))
+
 /* Glue: use this macros to create macros "on the fly"
  */
 
