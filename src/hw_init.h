@@ -36,11 +36,22 @@ void init_pins();
 
 /**
  * Initialise all gpio modules.
+ *
+ * GPIO Modules must be initialised before the pins can be reconfigured.
  */
 void init_all_gpio();
 
 /**
- * Initialize the PLL and system clock.
+ * Anti-brick routine.
+ *
+ * Check if the failsafe button is pressed and loop forever.
+ * The program should call this routine before doing anything, to provide a way
+ * to enter debug mode.
+ */
+void init_failsafe();
+
+/**
+ * Initialise the PLL and system clock.
  */
 void init_clock();
 

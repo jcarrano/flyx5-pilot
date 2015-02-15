@@ -97,6 +97,22 @@ void init_all_gpio()
 	R_(SysCtlPeripheralEnable)(SYS_PERIPH(GPIOF));
 }
 
+void init_failsafe()
+{
+	R_(SysCtlPeripheralEnable)(GPIO_PERIPH(BUTTON_2));
+	R_(SysCtlPeripheralReset)(GPIO_PERIPH(BUTTON_2));
+
+	CFG_PIN(BUTTON_2);
+	R_(GPIOPadConfigSet)(PORT_OF(BUTTON_2),
+		BIT(PIN_N(BUTTON_2)), GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
+
+	if (PIN_ACTIVE(BUTTON_2)) {
+		while (1) {
+			// loop forever, and ever ......
+		}
+	}
+}
+
 void init_clock()
 {
 	/* The following parameters should provide us a 80MHz clock

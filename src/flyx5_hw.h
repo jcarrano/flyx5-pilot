@@ -23,20 +23,20 @@
 
 /* Configure the pin */
 
-#define CFG_PIN5(port, pin, function, type, activity) { \
-	R_(GPIOPinType##type)(GPIO_PORT##port##_BASE, GLUE(GPIO_PIN_, pin)); \
-	R_(GPIOPinConfigure)(GPIO_P##port##pin##_##function); \
-	}
-
 #define CFG_PINs(port, pins, type, activity) { \
 	R_(GPIOPinType##type)(GPIO_PORT##port##_BASE, pins); \
+	}
+
+#define CFG_PIN5(port, pin, function, type, activity) { \
+	R_(GPIOPinConfigure)(GPIO_P##port##pin##_##function); \
+	R_(GPIOPinType##type)(GPIO_PORT##port##_BASE, GLUE(GPIO_PIN_, pin)); \
 	}
 
 #define CFG_PIN4(port, pin, type, activity, _0) { \
 	R_(GPIOPinType##type)(GPIO_PORT##port##_BASE, GLUE(GPIO_PIN_, pin)); \
 	}
 
-#define CFG_PIN(...) _POLYARGS5(__VA_ARGS__, CFG_PIN5, CFG_PIN4)
+#define CFG_PIN(...) _POLYARGS5(__VA_ARGS__, CFG_PIN5, CFG_PIN4, _0)
 
 /* Get the correspondig port base */
 
@@ -44,12 +44,12 @@
 
 #define PORT_OF4(port, pins, type, activity, _0) GLUE3(GPIO_PORT,port,_BASE)
 
-#define PORT_OF(...) _POLYARGS5(__VA_ARGS__, PORT_OF5, PORT_OF4)
+#define PORT_OF(...) _POLYARGS5(__VA_ARGS__, PORT_OF5, PORT_OF4, _0)
 
 /* Get the pin number */
 
 #define PIN_N_(port, pin, ...) (pin) MDUMMY((__VA_ARGS__))
-#define PIN_N(p) PIN_N_(p)
+#define PIN_N(...) PIN_N_(__VA_ARGS__)
 
 /* Interrupt enabling and disabling for gpios */
 
@@ -60,6 +60,24 @@
 
 #define GPIO_UNLOCK(p) gpio_lock(PORT_OF(p), Unlock)
 #define GPIO_LOCK(p) gpio_lock(PORT_OF(p), Lock)
+
+/* Get the pin state */
+
+#define _XFORM_ACT_HI(value, mask) ((value) & 0xFFF0)
+#define _XFORM_ACT_RISE(value, mask) ((value) & 0xFFF0)
+#define _XFORM_ACT_LO(value, mask) ((~value) & mask)
+#define _XFORM_ACT_FALL(value, mask) ((~value) & mask)
+
+#define _PIN_ACTIVE(port, pin, type, activity) \
+	(GLUE(_XFORM_, activity)(GPIOPinRead(PORT_OF(port, pin, type, activity), \
+	 BIT(PIN_N(port, pin))), BIT(PIN_N(port, pin))))
+
+#define PIN_ACTIVE(...) _PIN_ACTIVE(__VA_ARGS__)
+
+/* Get the gpio peripheral for pin */
+
+#define GPIO_PERIPH_(port, ...) GLUE(SYSCTL_PERIPH_GPIO, port) MDUMMY((__VA_ARGS__))
+#define GPIO_PERIPH(...) GPIO_PERIPH_(__VA_ARGS__)
 
 /* ************************* Pin map table ********************************** */
 
@@ -128,7 +146,7 @@ Unusable	PC0
 #define NRF_SS          B,	1,			GPIOOutput,
 #define NRF_INT         B,	5,			GPIOInput,
 
-#define BUZZER          F,	4,	T2CCP0,		Timer,
+#define BUZZER          F,	4,	T2CCP0,		Timer,		ACT_HI
 
 #define RC_ROLL         C,	4,	WT0CCP0,	Timer,		ACT_HI
 #define RC_PITCH        C,	5,	WT0CCP1,	Timer,		ACT_HI
@@ -155,6 +173,11 @@ Unusable	PC0
 #define BUS_AUX		SSI0
 
 #define TIMER_BUZZER	TIMER2
+	/* Half-Timer for the frequency synthesis */
+#define TIMER_BUZZER_SYN	A
+	/* Half-Timer for the note sequencing */
+#define TIMER_BUZZER_SEQ	B
+
 /* Timer for the roll & yaw channels. */
 #define TIMER_RC_RY	WTIMER0
 /* Timer for the pitch & altitude channels. */
@@ -162,6 +185,10 @@ Unusable	PC0
 /* Timer for the auxiliary channels. */
 #define TIMER_RC_AUX	TIMER0
 
+
+/* ******************* Macros to work with timers ********************* */
+#define sTIMER(t) GLUE(TIMER_, t)
+#define TIMER_CFG(t, cfg) GLUE3(TIMER_CFG_, t, cfg)
 
 /* ******************* Macros to work with peripherals ***************** */
 
