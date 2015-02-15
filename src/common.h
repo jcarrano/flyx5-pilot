@@ -107,4 +107,8 @@ typedef union {
 #define R_(f) f
 #endif
 
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
+
 #endif /* COMMON_H */

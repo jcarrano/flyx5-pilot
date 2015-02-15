@@ -51,6 +51,9 @@ extern "C"
 {
 #endif
 
+#include <stdint.h>
+#include <stdbool.h>
+
 //*****************************************************************************
 //
 // The following values define the bit field for the ui8Pins argument to
