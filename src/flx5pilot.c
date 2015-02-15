@@ -62,7 +62,7 @@ void UARTIntPut(uint32_t ui32Base, int x)
     UARTStringPut(ui32Base, s + i + 1);
 }
 
-int main(void)
+int main_carry(void)
 {
     init_failsafe();
 
@@ -79,8 +79,8 @@ int main(void)
 
     /* Initialize port */
     ENABLE_AND_RESET(UART_DEBUG);
-    CFG_PIN(DEBUG_RX);
-    CFG_PIN(DEBUG_TX);
+//    CFG_PIN(DEBUG_RX);
+//    CFG_PIN(DEBUG_TX);
 
     R_(UARTConfigSetExpClk)(BASE_PERIPH(UART_DEBUG) , R_(SysCtlClockGet)(), 115200,
                             (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
