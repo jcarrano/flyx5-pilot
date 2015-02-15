@@ -474,7 +474,7 @@ GPIOIntTypeGet(uint32_t ui32Port, uint8_t ui8Pin)
     ui32IEV = HWREG(ui32Port + GPIO_O_IEV);
     ui32SI = HWREG(ui32Port + GPIO_O_SI);
     return(((ui32IBE & ui8Pin) ? 1 : 0) | ((ui32IS & ui8Pin) ? 2 : 0) |
-           ((ui32IEV & ui8Pin) ? 4 : 0) | (ui32SI & 0x01) ? 0x10000 : 0);
+           ((ui32IEV & ui8Pin) ? 4 : 0) | ((ui32SI & 0x01) ? 0x10000 : 0));
 }
 
 //*****************************************************************************
