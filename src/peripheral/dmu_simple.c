@@ -13,6 +13,8 @@ void dmu_InitFailed(void);
 void dmu_StagesInit();
 void dmu_CommFailed(void);
 
+iic_commData_T * dmu_commDataPtr = &(iic_commData[DMU_MODULE_NUMBER]);
+
 void dmu_Init()
 {
 //	u16 offsetSampleRate;
@@ -39,8 +41,8 @@ void dmu_StagesInit()
 	{
 	case 0:
 
-		iic_commData.data[0] = ADD_PWR_MGMT_1;
-		iic_commData.data[1] = PWR_MGMT_1_STOP;
+		dmu_commDataPtr->data[0] = ADD_PWR_MGMT_1;
+		dmu_commDataPtr->data[1] = PWR_MGMT_1_STOP;
 
 		dmu_Send (dmu_StagesInit, dmu_InitFailed, 2, NULL);
 
@@ -51,8 +53,8 @@ void dmu_StagesInit()
 
 	case 1:
 
-		iic_commData.data[0] = ADD_PWR_MGMT_1;
-		iic_commData.data[1] = 0;
+		dmu_commDataPtr->data[0] = ADD_PWR_MGMT_1;
+		dmu_commDataPtr->data[1] = 0;
 
 		dmu_Send (dmu_StagesInit, dmu_InitFailed, 2, NULL);
 
@@ -63,18 +65,18 @@ void dmu_StagesInit()
 	case 2:
 		// Note: inserting delay / putchars here screws configuration up.
 
-		iic_commData.data[0] = ADD_SAMPLE_RATE_DIVIDER;
-		iic_commData.data[1] = SAMPLE_RATE_DIVIDER;	// 25
-		iic_commData.data[2] = CONFIG;				// 26
-		iic_commData.data[3] = GYRO_CONFIG(GYRO_X_SELFTEST, GYRO_Y_SELFTEST, GYRO_Z_SELFTEST);		// 27
-		iic_commData.data[4] = ACCEL_CONFIG(ACCEL_X_SELFTEST, ACCEL_Y_SELFTEST, ACCEL_Z_SELFTEST);	//28
-		iic_commData.data[5] = FREE_FALL_THRESHOLD;
-		iic_commData.data[6] = FREE_FALL_DURATION;
-		iic_commData.data[7] = MOTION_INT_THRESHOLD;
-		iic_commData.data[8] = MOTION_INT_DURATION;
-		iic_commData.data[9] = ZERO_MOTION_THRESHOLD;
-		iic_commData.data[10] = ZERO_MOTION_DURATION;
-		iic_commData.data[11] = FIFO_ENABLE;
+		dmu_commDataPtr->data[0] = ADD_SAMPLE_RATE_DIVIDER;
+		dmu_commDataPtr->data[1] = SAMPLE_RATE_DIVIDER;	// 25
+		dmu_commDataPtr->data[2] = CONFIG;				// 26
+		dmu_commDataPtr->data[3] = GYRO_CONFIG(GYRO_X_SELFTEST, GYRO_Y_SELFTEST, GYRO_Z_SELFTEST);		// 27
+		dmu_commDataPtr->data[4] = ACCEL_CONFIG(ACCEL_X_SELFTEST, ACCEL_Y_SELFTEST, ACCEL_Z_SELFTEST);	//28
+		dmu_commDataPtr->data[5] = FREE_FALL_THRESHOLD;
+		dmu_commDataPtr->data[6] = FREE_FALL_DURATION;
+		dmu_commDataPtr->data[7] = MOTION_INT_THRESHOLD;
+		dmu_commDataPtr->data[8] = MOTION_INT_DURATION;
+		dmu_commDataPtr->data[9] = ZERO_MOTION_THRESHOLD;
+		dmu_commDataPtr->data[10] = ZERO_MOTION_DURATION;
+		dmu_commDataPtr->data[11] = FIFO_ENABLE;
 
 		dmu_Send (dmu_StagesInit, dmu_InitFailed, 12, NULL);
 
@@ -84,9 +86,9 @@ void dmu_StagesInit()
 
 	case 3:
 
-		iic_commData.data[0] = ADD_INT_PIN_CFG;
-		iic_commData.data[1] = INT_PIN_CFG;		// 55
-		iic_commData.data[2] = INT_ENABLE;
+		dmu_commDataPtr->data[0] = ADD_INT_PIN_CFG;
+		dmu_commDataPtr->data[1] = INT_PIN_CFG;		// 55
+		dmu_commDataPtr->data[2] = INT_ENABLE;
 
 
 		dmu_Send(dmu_StagesInit, dmu_InitFailed, 3, NULL);
@@ -97,11 +99,11 @@ void dmu_StagesInit()
 
 	case 4:
 
-		iic_commData.data[0] = ADD_SIGNAL_PATH_RESET;
-		iic_commData.data[1] = RESET_SIGNAL(1,1,1);
-		iic_commData.data[2] = MOTION_DETECT_CTRL;
-		iic_commData.data[3] = USER_CTRL(0,1,1);	// Run means not reset.
-		iic_commData.data[4] = PWR_MGMT_1_RUN;
+		dmu_commDataPtr->data[0] = ADD_SIGNAL_PATH_RESET;
+		dmu_commDataPtr->data[1] = RESET_SIGNAL(1,1,1);
+		dmu_commDataPtr->data[2] = MOTION_DETECT_CTRL;
+		dmu_commDataPtr->data[3] = USER_CTRL(0,1,1);	// Run means not reset.
+		dmu_commDataPtr->data[4] = PWR_MGMT_1_RUN;
 		// PWR_MGMT_2 stays in 0 (reset value).
 
 		dmu_Send(dmu_StagesInit, dmu_InitFailed, 5, NULL);
@@ -112,8 +114,8 @@ void dmu_StagesInit()
 
 	case 5:
 
-		iic_commData.data[0] = ADD_USER_CTRL;
-		iic_commData.data[1] = USER_CTRL_INIT;	// Run means not reset.
+		dmu_commDataPtr->data[0] = ADD_USER_CTRL;
+		dmu_commDataPtr->data[1] = USER_CTRL_INIT;	// Run means not reset.
 
 		dmu_Send(dmu_StagesInit, dmu_InitFailed, 2, NULL);
 
@@ -124,7 +126,9 @@ void dmu_StagesInit()
 
 	case 6:
 
-		dmu_FifoReset(dmu_StagesInit);
+		dmu_commDataPtr->data[0] = ADD_USER_CTRL;									\
+		dmu_commDataPtr->data[1] = USER_CTRL(FIFO_MASTER_ENABLE, FIFO_RESET, 1);	\
+		dmu_Send(dmu_StagesInit, dmu_InitFailed, 2, NULL);
 		dmu_data.stage++;
 
 		break;
