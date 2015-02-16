@@ -43,6 +43,18 @@
 
 //*****************************************************************************
 //
+// External functions and Handlers.
+//
+//*****************************************************************************
+
+extern void iic0_InterruptHandler(void);
+extern void iic1_InterruptHandler(void);
+extern void UARTprintf(const char *pcString, ...);
+extern void gpioA_InterruptHandler(void);
+
+
+//*****************************************************************************
+//
 // Forward declaration of the default fault handlers.
 //
 //*****************************************************************************
@@ -91,7 +103,7 @@ void (* const g_pfnVectors[])(void) =
     0,                                      // Reserved
     IntDefaultHandler,                      // The PendSV handler
     IntDefaultHandler,                      // The SysTick handler
-    IntDefaultHandler,                      // GPIO Port A
+    gpioA_InterruptHandler,                 // GPIO Port A
     IntDefaultHandler,                      // GPIO Port B
     IntDefaultHandler,                      // GPIO Port C
     IntDefaultHandler,                      // GPIO Port D
@@ -99,7 +111,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // UART0 Rx and Tx
     IntDefaultHandler,                      // UART1 Rx and Tx
     IntDefaultHandler,                      // SSI0 Rx and Tx
-    IntDefaultHandler,                      // I2C0 Master and Slave
+    iic0_InterruptHandler,                  // I2C0 Master and Slave
     IntDefaultHandler,                      // PWM Fault
     IntDefaultHandler,                      // PWM Generator 0
     IntDefaultHandler,                      // PWM Generator 1
@@ -128,7 +140,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // SSI1 Rx and Tx
     IntDefaultHandler,                      // Timer 3 subtimer A
     IntDefaultHandler,                      // Timer 3 subtimer B
-    IntDefaultHandler,                      // I2C1 Master and Slave
+    iic1_InterruptHandler,                      // I2C1 Master and Slave
     IntDefaultHandler,                      // Quadrature Encoder 1
     IntDefaultHandler,                      // CAN0
     IntDefaultHandler,                      // CAN1
@@ -330,6 +342,8 @@ NmiSR(void)
 static void
 FaultISR(void)
 {
+
+	UARTprintf("Fault ISR\n\r");
     //
     // Enter an infinite loop.
     //
@@ -351,6 +365,8 @@ IntDefaultHandler(void)
     //
     // Go into an infinite loop.
     //
+
+	UARTprintf("default handler\n\r");
     while(1)
     {
     }

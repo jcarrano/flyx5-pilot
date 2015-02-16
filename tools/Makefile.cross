@@ -72,12 +72,13 @@ SIZE            := $(CROSS)size
 
 # windows hacks
 ifeq ($(strip $(OS)), Windows_NT)
-# no command to make directory (`rem` is a comment in windows)
 MKDIR           := rem
 RM		:= del
+PATHSEP := \\
 else
 MKDIR           := mkdir -p
 RM		:= rm -f
+PATHSEP := /
 endif
 
 # Entry point for the executable
@@ -160,7 +161,12 @@ NEEDED_OBJECTS = $(C_FILES:.c=.o) $(s_FILES:.s=.o) $(S_FILES:.S=.o)
 # ############################################################################ #
 
 OUT_DIR ?= out
+# windows hacks
+ifeq ($(strip $(OS)), Windows_NT)
+OUT_FILE ?= $(OUT_DIR)\$(PROGRAM_NAME)
+else
 OUT_FILE ?= $(OUT_DIR)/$(PROGRAM_NAME)
+endif
 
 ifeq (${MAKE_LIBRARY}, true)
 all: $(OUT_FILE).a $(OUT_FILE).sym
@@ -199,15 +205,15 @@ allclean: clean depclean
 # Rules to clean each type of file
 
 %d-clean:
-	$(RM) $*d
+	$(RM) $(subst /,$(PATHSEP),$*d)
 %ds-clean:
-	$(RM) $*ds
+	$(RM) $(subst /,$(PATHSEP),$*ds)
 %dss-clean:
-	$(RM) $*dss
+	$(RM) $(subst /,$(PATHSEP),$*dss)
 %o-clean:
-	$(RM) $*o
+	$(RM) $(subst /,$(PATHSEP),$*o)
 %gch-clean:
-	$(RM) $*gch
+	$(RM) $(subst /,$(PATHSEP),$*gch)
 
 # ###################### Dependency handling ################################# #
 

@@ -51,6 +51,9 @@ extern "C"
 {
 #endif
 
+#include <stdint.h>
+#include <stdbool.h>
+
 //*****************************************************************************
 //
 // Values that can be passed to UARTIntEnable, UARTIntDisable, and UARTIntClear

@@ -160,6 +160,10 @@ Unusable	PC0
 #define UART_DEBUG	UART0
 #define BUS_SENSORS	I2C1
 #define BUS_DMU		I2C0
+
+#define BUS_SENSORS_NUM	1
+#define BUS_DMU_NUM 	0
+
 /* Timers for ultrasound */
 #define TIMER_ULTRA	TIMER1
 /* SPI bus for SPI-controlled ESCS */
