@@ -48,6 +48,7 @@
 //*****************************************************************************
 
 extern void iic0_InterruptHandler(void);
+extern void iic1_InterruptHandler(void);
 extern void UARTprintf(const char *pcString, ...);
 extern void gpioA_InterruptHandler(void);
 
@@ -139,7 +140,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // SSI1 Rx and Tx
     IntDefaultHandler,                      // Timer 3 subtimer A
     IntDefaultHandler,                      // Timer 3 subtimer B
-    IntDefaultHandler,                      // I2C1 Master and Slave
+    iic1_InterruptHandler,                      // I2C1 Master and Slave
     IntDefaultHandler,                      // Quadrature Encoder 1
     IntDefaultHandler,                      // CAN0
     IntDefaultHandler,                      // CAN1

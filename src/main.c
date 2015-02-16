@@ -47,7 +47,6 @@
 
 void main_samplesReady(void);
 
-uint32_t TypeGet(uint32_t ui32Port, uint8_t ui8Pin);
 //*****************************************************************************
 //
 //! \addtogroup example_list
@@ -162,8 +161,8 @@ void main_Init()
     //
     UARTprintf("Hello, Juan!\n");
 
-	iic_Init(0);
-	iic_EnterLoopbackMode();
+	//iic_Init(1);
+	//iic_EnterLoopbackMode();
 
 	err_Init(NULL, puts, NULL);
 }

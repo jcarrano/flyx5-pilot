@@ -23,7 +23,16 @@
 #define IIC_MODULE I2C0
 #define IIC_SINGLE_MODULE_BASE GLUE(IIC_MODULE, _BASE)
 
-#define IIC_MEM_SIZE (256)
+enum{
+	IIC_MODULE_0,
+	IIC_MODULE_1,
+	IIC_MODULE_2,
+	IIC_MODULE_3
+};
+
+#define I2C_MODULE_QTY 2	// I2C0 & 1 available
+
+#define IIC_MEM_SIZE (50)
 
 typedef void (*iic_ptr)(uint8_t moduleNumber);
 typedef void (*iic_userAction)(void);
@@ -50,7 +59,7 @@ typedef struct {
 } iic_commData_T;
 
 
-extern iic_commData_T iic_commData;
+extern iic_commData_T iic_commData[I2C_MODULE_QTY];
 
 #if (IIC_MODULE == I2C0)
 
