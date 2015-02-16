@@ -1,0 +1,27 @@
+syntax: glob
+*~
+*.pyc
+*.o
+*.la
+*.lo
+*.a
+*.gch
+a.out
+*.pfd
+*.elf
+*.test
+*.pdf
+*.axf
+.libs
+*.d
+*.ds
+*.dss
+
+*.map
+*.sym
+*.hex
+*.bin
+*.lss
+
+syntax: regexp
+.*\#.*\#$

@@ -1,0 +1,272 @@
+# Generic Makefile for bare-bones cross-compilation.
+#   by Juan I Carrano <juan@carrano.com.ar>
+#
+# Features:
+#   - Generic (can be adapted to different targets).
+#   - Supports automatic dependencies (.d files).
+#   - OS-independent (does not make use of os-specific shell commands).
+#
+# Copyright (c) 2014, Juan Ignacio Carrano
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+# How to use this file:
+#
+# You need to define the necessary variables in processor-specific or
+# or processor family-spefific makefile, then include this file. This file will
+# be referred as Makefile.target in the rest of the document.
+#
+# In your project, define project-specific settings and include the
+# Makefile.target.
+#
+
+# Things you MUST define in the processor-specific make
+#
+# CPART= -mpart=xxxxx
+# PART=xxxx
+# DEBUG_FLAGS
+# CROSS
+# IPATH, LDPATH
+#
+# Things that must be defined in the project specific makefile
+#
+# PROGRAM_NAME
+# IPATH, LDPATH
+# LIBRARIES
+#
+
+#Define the cross compilation tools
+
+AR              := $(CROSS)ar
+AS              := $(CROSS)gcc -c
+CC              := $(CROSS)gcc
+CPP             := $(CROSS)gcc -E
+CXX             := $(CROSS)g++
+LD              := $(CROSS)gcc
+NM              := $(CROSS)nm
+OBJCOPY         := $(CROSS)objcopy
+OBJDUMP         := $(CROSS)objdump
+SIZE            := $(CROSS)size
+
+# windows hacks
+ifeq ($(strip $(OS)), Windows_NT)
+# no command to make directory (`rem` is a comment in windows)
+MKDIR           := rem
+RM		:= del
+else
+MKDIR           := mkdir -p
+RM		:= rm -f
+endif
+
+# Entry point for the executable
+ENTRY_POINT ?= _start
+
+CPPFLAGS += $(IPATH)
+CFLAGS += $(CPART) $(DEBUG_FLAGS) $(CPPFLAGS) $(OFLAGS) \
+	-pedantic -Wall -fno-stack-protector\
+	-pipe \
+	-std=gnu99 \
+	-ffunction-sections -fdata-sections
+ASFLAGS += $(CPART) $(CPPFLAGS) -pipe -x assembler-with-cpp
+LDFLAGS += $(LDPATH) -pipe \
+	-Wl,--relax \
+	-nostartfiles -Wl,-e,$(ENTRY_POINT) \
+	-Wl,--gc-sections -Wl,-Map=$(PROGRAM_NAME).map,--cref
+
+# If the variable THIN_ARCHIVE is set to true, then a "thin" archive is created.
+# In this mode the .a files do not contain code, only an index, the code is
+# contained in object files.
+
+ifeq (${THIN_ARCHIVE}, true)
+ARFLAGS = rcTs
+else
+ARFLAGS = rcs
+endif
+
+# If we are creating a library, we must add some options to the compiler
+
+ifeq (${MAKE_LIBRARY}, true)
+# generate Position Independent Code
+CFLAGS += -fPIC
+endif
+
+# ###################### Messages ######################### #
+
+MSG_LINKING ?= Linking executable
+MSG_ARCHIVING ?= Creating static library archive
+
+# ############################################################################ #
+# Automatic dependency generation
+# ############################################################################ #
+
+# flags for the preprocessor
+DEPFLAGS = -MM -MP -MQ $@ -MQ $*.o
+
+# rwildcard
+#	Use this function to recursively search for all files with a certain
+#	extension
+rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
+
+# ######## Let's make a list of all files which exist currently ############ #
+C_FILES=$(call rwildcard,,*.c)
+S_FILES=$(call rwildcard,,*.S)
+s_FILES=$(call rwildcard,,*.s)
+
+# .d files are dependency listings for .c files
+D_FILES=$(call rwildcard,,*.d)
+
+# .ds files are dependency listings for .s (assembler) files
+Ds_FILES=$(call rwildcard,,*.ds)
+
+# .dss files are dependency listings for .S (assembler) files
+Dss_FILES=$(call rwildcard,,*.dss)
+
+O_FILES=$(call rwildcard,,*.o)
+GCH_FILES=$(call rwildcard,,*.gch)
+
+ASM_FILES = $(S_FILES) $(s_FILES)
+
+# ###### Make a list of files that need to be produced ###############
+
+# each .c produces a .o
+NEEDED_OBJECTS = $(C_FILES:.c=.o) $(s_FILES:.s=.o) $(S_FILES:.S=.o)
+
+# More on automatic dependencies below
+
+# ############################################################################ #
+# Rules for building the project
+# ############################################################################ #
+
+OUT_DIR ?= out
+OUT_FILE ?= $(OUT_DIR)/$(PROGRAM_NAME)
+
+ifeq (${MAKE_LIBRARY}, true)
+all: $(OUT_FILE).a $(OUT_FILE).sym
+else
+# Ok. maybe it is too much to generate all this files. You can define a
+# my_all rule before this one to generate only the ones you want.
+all: $(OUT_FILE).elf $(OUT_FILE).lss $(OUT_FILE).sym $(OUT_FILE).hex \
+	$(OUT_FILE).bin
+endif
+
+$(OUT_FILE).elf: | out-dir
+$(OUT_FILE).a: | out-dir
+
+# there is one problem with generating the output directory: mkdir -p does not
+# work on Windows.
+# If you are on windows, you better have have the directory already there.
+# Also, the output directory may be the current directory
+out-dir:
+	$(MKDIR) $(OUT_DIR)
+
+
+# ######################## Rules for cleaning ################################ #
+
+.PHONY: depclean
+depclean: $(foreach dfile,$(D_FILES) $(Ds_FILES) $(Dss_FILES),$(dfile)-clean)
+
+.PHONY: clean
+clean: $(foreach f,$(O_FILES),$(f)-clean) \
+	$(foreach f,$(GCH_FILES),$(f)-clean)
+#	rm -rf out
+# It is not easy to mkdir on windows, so we better not delete the directory
+
+.PHONY: allclean
+allclean: clean depclean
+
+# Rules to clean each type of file
+
+%d-clean:
+	$(RM) $*d
+%ds-clean:
+	$(RM) $*ds
+%dss-clean:
+	$(RM) $*dss
+%o-clean:
+	$(RM) $*o
+%gch-clean:
+	$(RM) $*gch
+
+# ###################### Dependency handling ################################# #
+
+# If we are only cleaning then ignore the dependencies
+ifneq ($(MAKECMDGOALS),depclean)
+ifneq ($(MAKECMDGOALS),clean)
+-include $(C_FILES:.c=.d)
+-include $(s_FILES:.s=.ds)
+-include $(S_FILES:.S=.dss)
+endif
+endif
+
+%.d: %.c
+	$(CC) $(CFLAGS) $(DEPFLAGS) $< >$@
+
+%.ds: %.s
+	$(CC) $(CFLAGS) $(DEPFLAGS) $< >$@
+
+%.dss: %.S
+	$(CC) $(CFLAGS) $(DEPFLAGS) $< >$@
+
+# ##################### Output file generation ############################### #
+
+# "The" file. Uses all the object and assembly files.
+$(OUT_FILE).elf: $(NEEDED_OBJECTS)
+
+# Generate a ELF format binary by linking in object files
+%.elf:
+	@echo $(MSG_LINKING)
+	$(LD) $(LDFLAGS) $^ $(LIBRARIES) -Wl,--start-group -Wl,--end-group -o $@
+
+# ### Static library support # #
+
+$(OUT_FILE).a: $(NEEDED_OBJECTS)
+
+# create a static library file from object files
+%.a:
+	@echo $(MSG_ARCHIVING)
+	$(AR) $(ARFLAGS) $@ $^
+
+# Create extended function listing from target output file.
+%.lss: %.elf
+	$(OBJDUMP) -h -S $< > $@
+
+# Create symbol table from target output file.
+ifeq (${MAKE_LIBRARY}, true)
+%.sym: %.a
+	$(NM) -n $< > $@
+else
+%.sym: %.elf
+	$(NM) -n $< > $@
+endif
+
+# Create Intel HEX image from ELF output file.
+%.hex: %.elf
+	$(OBJCOPY) -O ihex $< $@
+
+# Create binary image from ELF output file.
+%.bin: %.elf
+	$(OBJCOPY) -O binary $< $@
+
+# END
