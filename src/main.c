@@ -42,7 +42,7 @@
 #include "peripheral/altimeter_simple.h"
 #include "Misc/error.h"
 #include "debug_tools/stdio_simple.h"
-#include "peripheral/dmu_definitions.h"
+#include "peripheral/dmu_6500.h"
 #include "xdriver/gpio_interface.h"
 
 
@@ -108,36 +108,35 @@ int main(void)
 	dmu_Init();
 
 
-	altimeter_Init();
+	//altimeter_Init();
 
 	UARTprintf("init done\n\r");
 
 	//rled_On();
 	//dmu_ReceiveFromRegister(ADD_WHO_AM_I, readSuccess, readFail, 1, main_data.readBuffer);
 
-	while(UARTgetc() != 'k')
-		;
-
 	UARTprintf("gasssss\n\r");
-	altimeter_CommenceMeasurement();
+	//altimeter_CommenceMeasurement();
 
     while(1)
     {
+    	/*
     	if (altimeter_meas_ready == true)
     	{
     		altimeter_Measure(PrintMeters, NULL); // eot recibe un int32_t con la medicion de altura
     	}
-    	/*
+    	*/
+
     	if (main_data.samplesReady)
     	{
-    		if (main_data.cnt++ > 10)
+    		if (main_data.cnt++ > 1)
     		{
     	    	dmu_GetMeasurements(dmu_PrintFormattedMeasurements);
     	    	main_data.cnt = 0;
     		}
     		main_data.samplesReady = false;
 
-    	}*/
+    	}
     	/*SysCtlDelay(SysCtlClockGet() / 10 / 3);
 
     	dmu_GetMeasurements(dmu_PrintFormattedMeasurements);
@@ -184,7 +183,7 @@ void main_Init()
     //
     // Hello!
     //
-    UARTprintf("Hello, Cara de Pito Liquido Gaseoso!\n");
+    UARTprintf("Hugo la concha de tu madre!\n");
 
 	iic_Init(DMU_MODULE_NUMBER);
 	//iic_EnterLoopbackMode();

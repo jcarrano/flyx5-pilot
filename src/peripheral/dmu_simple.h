@@ -3,7 +3,7 @@
 
 #include "../common.h"
 #include "../xdriver/iic_interface.h"
-#include "dmu_definitions.h"
+#include "dmu_6500.h"
 #include "../Misc/arith.h"
 #include "../flyx5_hw.h"
 
