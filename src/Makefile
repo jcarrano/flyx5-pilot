@@ -9,7 +9,8 @@ PROGRAM_NAME=flx5pilot
 
 # Defines the part type that this project uses.
 #
-PART=TM4C1237H6PM
+PART=TM4C1237H6PM	#for quad
+#PART=TM4C123GH6PM	# for dev
 
 # The base directory
 #
@@ -25,6 +26,8 @@ LDPATH=-L${ROOT}/ext_libs/driverlib
 LIBRARIES=-ldrivers
 
 DEBUG_FLAGS=-dA -g3
+
+#OFLAGS=-O2
 
 # Include the common make definitions.
 #

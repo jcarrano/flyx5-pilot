@@ -21,17 +21,19 @@ enum {
 	GPIO_E
 };
 
+extern const uint32_t GPIO_BASES[];
+#define GPIO_BASE(x) (GPIO_BASES[x])
+
 /*
  * Write tasks to perform in .c file.
  */
 
 
-// gpio_Init
-// Initiates GPIO interrupts in given GPIO module and pins, of the given type (Edge rising/ falling/ both - Level high/ low).
-// Individual actions to perform for each pin shall be written in .c file in corresponding module data structure.
-// @param gpioNumber: GPIO module number (use enum above).
-// @param gpioPins: pins that will interrupt in the module; use GPIO_PIN_X(s) ORd.
-// @param gpioIntType: use one of the std types: GPIO_RISING_EDGE / _FALLING_EDGE / _BOTH_EDGES / _HIGH_LEVEL / _LOW_LEVEL.
+//! Initiates GPIO interrupts in given GPIO module and pins, of the given type (Edge rising/ falling/ both - Level high/ low).
+//! Individual actions to perform for each pin shall be written in .c file in corresponding module data structure.
+//! @param gpioNumber: GPIO module number (use enum above).
+//! @param gpioPins: pins that will interrupt in the module; use GPIO_PIN_X(s) ORd.
+//! @param gpioIntType: use one of the std types: GPIO_RISING_EDGE / _FALLING_EDGE / _BOTH_EDGES / _HIGH_LEVEL / _LOW_LEVEL.
 void gpio_Init(uint8_t gpioNumber, uint32_t gpioPins, uint32_t gpioIntType);
 
 
