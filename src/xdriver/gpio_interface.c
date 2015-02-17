@@ -40,10 +40,10 @@ const gpio_PinAction GPIOE_PIN_ACTIONS[] = {
 		GPIO_PIN_3,
 		gpioE_pin3Action
 	},
-	{
+/*	{
 		GPIO_PIN_5,
 		gpioE_pin5Action
-	}
+	}*/
 };
 
 // Constants and Macros
