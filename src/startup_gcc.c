@@ -51,6 +51,7 @@ extern void iic0_InterruptHandler(void);
 extern void iic1_InterruptHandler(void);
 extern void UARTprintf(const char *pcString, ...);
 extern void gpioA_InterruptHandler(void);
+extern void gpioE_InterruptHandler(void);
 
 
 //*****************************************************************************
@@ -107,7 +108,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // GPIO Port B
     IntDefaultHandler,                      // GPIO Port C
     IntDefaultHandler,                      // GPIO Port D
-    IntDefaultHandler,                      // GPIO Port E
+    gpioE_InterruptHandler,                      // GPIO Port E
     IntDefaultHandler,                      // UART0 Rx and Tx
     IntDefaultHandler,                      // UART1 Rx and Tx
     IntDefaultHandler,                      // SSI0 Rx and Tx

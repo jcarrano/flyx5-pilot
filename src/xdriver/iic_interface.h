@@ -81,21 +81,40 @@ extern iic_commData_T iic_commData[I2C_MODULE_QTY];
 
 void iic_Init(uint8_t moduleNumber);
 
-/*
- * @param module: module number to be used [0 - 3].
- * @param slaveAddress: 7-bit right-aligned direction to send data.
- * @param eotCB: function to call after transmission is completed.
- * @param commFailedCB: Error handler function.
- * @param toSend: quantity of bytes to send.
- * @param sendBuffer: pointer to memory block to be sent.
- */
 
+
+//! Send message to target device, and execute action afterwards.
+//!
+//! @param moduleNumber: module number to be used [0 - 3].
+//! @param slaveAddress: 7-bit right-aligned direction to send data.
+//! @param eotCB: function to call after transmission is completed correctly.
+//! @param commFailedCB: Error handler function.
+//! @param toSend: quantity of bytes to send.
+//! @param sendBuffer: pointer to memory block to be sent.
+//
+//
 void iic_Send(uint8_t moduleNumber, uint8_t slaveAddress, iic_userAction eotCB, iic_userAction commFailedCB, uint8_t toSend, uint8_t* sendBuffer);
 
+
+//! Receive message from target device's register(s), and execute action afterwards.
+//!
+//! @param moduleNumber: module number to be used [0 - 3].
+//!	@param regAddress: register address to start reception.
+//! @param slaveAddress: 7-bit right-aligned direction to send data.
+//! @param eotCB: function to call after transmission is completed correctly.
+//! @param commFailedCB: Error handler function.
+//! @param toRead: quantity of bytes to read.
+//! @param sendBuffer: pointer to memory block to write the received data.
+//
+//	@note \b sendBuffer can be \b NULL; in that case the data received will be stored in iic_commData.data buffer.
+//
 void iic_ReceiveFromRegister (uint8_t moduleNumber, uint8_t regAddress, uint8_t slaveAddress, iic_userAction eotCB, iic_userAction commFailedCB, uint8_t toRead, uint8_t* receiveBuffer);
 
 void iic_Receive (uint8_t moduleNumber, uint8_t slaveAddress, iic_userAction eotCB, iic_userAction commFailedCB, uint8_t toRead, uint8_t* receiveBuffer);
 
+/*
+ * For debugging purposes; slave must be connected for interrupt handler to be called.
+ */
 void iic_EnterLoopbackMode(void);
 
 #endif /* I2C_INTERFACE_H_ */

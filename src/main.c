@@ -39,10 +39,12 @@
 #include "xdriver/iic_interface.h"
 #include "debug_tools/led.h"
 #include "peripheral/dmu_simple.h"
+#include "peripheral/altimeter_simple.h"
 #include "Misc/error.h"
 #include "debug_tools/stdio_simple.h"
 #include "peripheral/dmu_definitions.h"
 #include "xdriver/gpio_interface.h"
+
 
 
 void main_samplesReady(void);
@@ -72,7 +74,8 @@ __error__(char *pcFilename, uint32_t ui32Line)
 }
 #endif
 
-#define DMU_INT_PIN GPIO_PIN_2
+//#define XTAL_SPEED SYSCTL_XTAL_16MHZ	// 16 for dev board & 20 for real board
+#define XTAL_SPEED SYSCTL_XTAL_20MHZ
 
 void main_Init(void);
 void ConfigureUART(void);
@@ -92,6 +95,9 @@ struct {
 
 }main_data = {{0}, false, 0};
 
+#include "peripheral/dmu_simple.h"
+
+void PrintMeters(int32_t meters);
 
 int main(void)
 {
@@ -100,31 +106,50 @@ int main(void)
 	main_Init();
 
 	dmu_Init();
-	gpio_Init(GPIO_A, DMU_INT_PIN, GPIO_RISING_EDGE);
+
+
+	altimeter_Init();
 
 	UARTprintf("init done\n\r");
-	rled_On();
 
-	//dmu_ReceiveFromRegister(ADD_WHO_AM_I, readSuccess, readFail, 1, readBuffer);
+	//rled_On();
+	//dmu_ReceiveFromRegister(ADD_WHO_AM_I, readSuccess, readFail, 1, main_data.readBuffer);
+
+	while(UARTgetc() != 'k')
+		;
+
+	UARTprintf("gasssss\n\r");
+	altimeter_CommenceMeasurement();
 
     while(1)
     {
-
+    	if (altimeter_meas_ready == true)
+    	{
+    		altimeter_Measure(PrintMeters, NULL); // eot recibe un int32_t con la medicion de altura
+    	}
+    	/*
     	if (main_data.samplesReady)
     	{
-    		if (main_data.cnt++ > 5)
+    		if (main_data.cnt++ > 10)
     		{
     	    	dmu_GetMeasurements(dmu_PrintFormattedMeasurements);
     	    	main_data.cnt = 0;
     		}
     		main_data.samplesReady = false;
 
-    	}
+    	}*/
     	/*SysCtlDelay(SysCtlClockGet() / 10 / 3);
 
     	dmu_GetMeasurements(dmu_PrintFormattedMeasurements);
     	*/
     }
+}
+
+void PrintMeters(int32_t meters)
+{
+	UARTprintf("Metros: %d\n", meters);
+	altimeter_meas_ready = false;
+	altimeter_CommenceMeasurement();
 }
 
 void main_Init()
@@ -139,7 +164,7 @@ void main_Init()
     //
     // Set the clocking to run directly from the crystal.
     //
-    SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ |
+    SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | XTAL_SPEED |
                        SYSCTL_OSC_MAIN);
 
     //
@@ -148,8 +173,8 @@ void main_Init()
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
 
-    led_Init();
-    led_Off();
+    //led_Init();
+    //led_Off();
 
     //
     // Initialize the UART.
@@ -159,9 +184,9 @@ void main_Init()
     //
     // Hello!
     //
-    UARTprintf("Hello, Juan!\n");
+    UARTprintf("Hello, Cara de Pito Liquido Gaseoso!\n");
 
-	//iic_Init(1);
+	iic_Init(DMU_MODULE_NUMBER);
 	//iic_EnterLoopbackMode();
 
 	err_Init(NULL, puts, NULL);
@@ -215,18 +240,17 @@ void readFail(void)
 	UARTprintf("Read Fail.\n\r");
 }
 
-
 void main_samplesReady(void)
 {
-	uint32_t a = GPIOIntTypeGet(GPIO_PORTA_BASE, 2);
+	uint32_t a = GPIOIntTypeGet(DMU_INT_PORT, DMU_INT_PIN_NUM);
 	if (a == GPIO_RISING_EDGE)
 	{
-		GPIOIntTypeSet(GPIO_PORTA_BASE, DMU_INT_PIN, GPIO_FALLING_EDGE);
+		GPIOIntTypeSet(DMU_INT_PORT, DMU_INT_PIN, GPIO_FALLING_EDGE);
 		main_data.samplesReady = true;
 	}
 	else
 	{
-		GPIOIntTypeSet(GPIO_PORTA_BASE, DMU_INT_PIN, GPIO_RISING_EDGE);
+		GPIOIntTypeSet(DMU_INT_PORT, DMU_INT_PIN, GPIO_RISING_EDGE);
 	}
 }
 
