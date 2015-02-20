@@ -44,6 +44,7 @@
 #include "debug_tools/stdio_simple.h"
 #include "peripheral/dmu_6500.h"
 #include "xdriver/gpio_interface.h"
+#include "debug_tools/debug.h"
 
 
 
@@ -98,6 +99,7 @@ struct {
 #include "peripheral/dmu_simple.h"
 
 void PrintMeters(int32_t meters);
+void Falle(void);
 
 int main(void)
 {
@@ -105,10 +107,10 @@ int main(void)
 
 	main_Init();
 
-	dmu_Init();
+	//dmu_Init();
 
 
-	//altimeter_Init();
+	altimeter_Init();
 
 	UARTprintf("init done\n\r");
 
@@ -116,17 +118,23 @@ int main(void)
 	//dmu_ReceiveFromRegister(ADD_WHO_AM_I, readSuccess, readFail, 1, main_data.readBuffer);
 
 	UARTprintf("gasssss\n\r");
-	//altimeter_CommenceMeasurement();
+
+	altimeter_CommenceMeasurement();
 
     while(1)
     {
-    	/*
-    	if (altimeter_meas_ready == true)
-    	{
-    		altimeter_Measure(PrintMeters, NULL); // eot recibe un int32_t con la medicion de altura
-    	}
-    	*/
 
+    	if (UARTgetc() == 'k')//(altimeter_meas_ready == true)
+    	{
+    		altimeter_Measure(PrintMeters, Falle); // eot recibe un int32_t con la medicion de altura
+    	}
+
+    	while (altimeter_meas_ready == false)
+    		;
+
+    	PrintMeters(meas);
+
+/*
     	if (main_data.samplesReady)
     	{
     		if (main_data.cnt++ > 1)
@@ -146,9 +154,17 @@ int main(void)
 
 void PrintMeters(int32_t meters)
 {
+	Putchar('v');
 	UARTprintf("Metros: %d\n", meters);
+	Putchar('v');
 	altimeter_meas_ready = false;
 	altimeter_CommenceMeasurement();
+	//altimeter_CommenceMeasurement();
+}
+
+void Falle(void)
+{
+	UARTprintf("Falle");
 }
 
 void main_Init()

@@ -6,14 +6,15 @@
 iic_commData_T * altimeter_commDataPtr = &(iic_commData[ALTIMETER_MODULE_NUM]);
 
 volatile bool altimeter_meas_ready;
+volatile int32_t meas;
 
 volatile bool altimeter_init = false;
 int altimeter_init_stage = 0;
 
-uint8_t altimeter_read_buffer[3];
+uint8_t altimeter_read_buffer[5];
 
-eot_t eot;
-iic_userAction comm_failed;
+volatile eot_t eot;
+volatile iic_userAction comm_failed;
 
 void altimeter_StagesInit(void);
 void altimeter_InitFailed(void);
@@ -49,7 +50,7 @@ void altimeter_StagesInit(void)
 		case 0:
 			altimeter_commDataPtr->data[0] = ADD_CTRL_REG1;
 			// Altitude measurements, full oversampling
-			altimeter_commDataPtr->data[1] = CTRL_REG1_ALT | CTRL_REG1_OS(7);
+			altimeter_commDataPtr->data[1] = CTRL_REG1_OS(0);
 
 			ALTIMETER_SEND(altimeter_StagesInit, altimeter_InitFailed, 2, NULL);
 
@@ -65,6 +66,15 @@ void altimeter_StagesInit(void)
 			break;
 
 		case 2:
+			altimeter_commDataPtr->data[0] = ADD_PT_DATA_CFG;
+			// Only generate events on new Altitude data
+			altimeter_commDataPtr->data[1] = PT_DATA_CGF_PDEFE;
+
+			ALTIMETER_SEND(altimeter_StagesInit, altimeter_InitFailed, 2, NULL);
+
+			break;
+
+		case 3:
 			altimeter_commDataPtr->data[0] = ADD_CTRL_REG4;
 			// Interrupt on data ready
 			altimeter_commDataPtr->data[1] = CTRL_REG4_INT_EN_DRDY;
@@ -73,19 +83,10 @@ void altimeter_StagesInit(void)
 
 			break;
 
-		case 3:
+		case 4:
 			altimeter_commDataPtr->data[0] = ADD_CTRL_REG5;
 			// Interrupt on data ready
 			altimeter_commDataPtr->data[1] = CTRL_REG5_INT_CFG_DRDY;
-
-			ALTIMETER_SEND(altimeter_StagesInit, altimeter_InitFailed, 2, NULL);
-
-			break;
-
-		case 4:
-			altimeter_commDataPtr->data[0] = ADD_PT_DATA_CFG;
-			// Only generate events on new Altitude data
-			altimeter_commDataPtr->data[1] = PT_DATA_CGF_DREM | PT_DATA_CGF_PDEFE;
 
 			ALTIMETER_SEND(altimeter_StagesInit, altimeter_InitFailed, 2, NULL);
 
@@ -109,7 +110,7 @@ void altimeter_CommenceMeasurement(void)
 {
 	altimeter_commDataPtr->data[0] = ADD_CTRL_REG1;
 	// Altitude measurements, full oversampling, start one shot
-	altimeter_commDataPtr->data[1] = CTRL_REG1_ALT | CTRL_REG1_OS(7) | CTRL_REG1_SBYB;//| CTRL_REG1_OST;
+	altimeter_commDataPtr->data[1] = CTRL_REG1_OS(0) | CTRL_REG1_OST;
 
 	ALTIMETER_SEND(NULL, NULL, 2, NULL);
 }
@@ -121,15 +122,33 @@ void altimeter_Measure(eot_t eotCB, iic_userAction commFailedCB) // eot recibe u
 
 	ALTIMETER_RECEIVE_FROM_REG(ADD_OUT_P_MSB, altimeter_ReportResults, commFailedCB, sizeof(altimeter_read_buffer), &(altimeter_read_buffer[0]));
 }
+#include "../debug_tools/debug.h"
 
 void altimeter_ReportResults(void)
 {
+	Putchar('f');
+	/*
 	int32_t altitude_meters = (int32_t) ( ((((uint32_t) altimeter_read_buffer[0]) << 12) & 0xFF000)
 										| ((((uint32_t) altimeter_read_buffer[1]) << 4) & 0x00FF0)
 										| ((((uint32_t) altimeter_read_buffer[2]) >> 4) & 0x0000F)
 										);
+										*/
 
-	eot(altitude_meters);
+	int32_t altitude_meters = (int32_t) ( ((((uint32_t) altimeter_read_buffer[0]) << 18))
+										| ((((uint32_t) altimeter_read_buffer[1]) << 8))
+										| ((((uint32_t) altimeter_read_buffer[2]) >> 0))
+										);
+	Putchar('p');
+	if (eot != NULL)
+	{
+		Putchar('n');
+		altimeter_meas_ready = true;
+		meas = altitude_meters;
+	}
+	else
+	{
+		Putchar('u');
+	}
 }
 
 void altimeterINT1ISR(void)

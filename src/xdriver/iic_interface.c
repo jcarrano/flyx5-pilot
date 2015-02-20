@@ -239,12 +239,10 @@ void iic_InterruptHandler(uint8_t moduleNumber, uint32_t moduleBase, uint32_t in
 	{
 		iic_dataPtr->currCB(moduleNumber);
 	}
-	else
+	else if(iic_dataPtr->eotCB != NULL)
 	{
-		if (iic_dataPtr->eotCB != NULL)
-		{
-			iic_dataPtr->eotCB();
-		}
+		Putchar('c');
+		iic_dataPtr->eotCB();
 	}
 
 	while(I2CMasterIntStatus(moduleBase, false) == true)	// IntClear is not immediate, make sure int flag is clear.

@@ -11,6 +11,7 @@
 
 typedef void (*eot_t)(int32_t meters);
 extern volatile bool altimeter_meas_ready;
+extern volatile int32_t meas;
 
 void altimeter_Init(void);
 
