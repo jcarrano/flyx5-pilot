@@ -1,0 +1,21 @@
+# Generic Makefile for TIVA-C microcontrollers
+#   by Juan I Carrano <juan@carrano.com.ar>
+#
+
+CROSS ?= arm-none-eabi-
+
+CPART=-mthumb             \
+       -mcpu=cortex-m4	\
+       -mfpu=fpv4-sp-d16 -mfloat-abi=softfp
+
+CPPFLAGS+=-DPART_${PART}
+
+LDFLAGS += -T $(PROGRAM_NAME).ld
+ENTRY_POINT = ResetISR
+
+include $(TOOLSPATH)/Makefile.cross
+
+# ######################## Rules for debugging ############################### #
+
+# FIXME: not done
+
