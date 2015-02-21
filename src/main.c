@@ -4,20 +4,20 @@
 //
 // Copyright (c) 2012-2014 Texas Instruments Incorporated.  All rights reserved.
 // Software License Agreement
-// 
+//
 // Texas Instruments (TI) is supplying this software for use solely and
 // exclusively on TI's microcontroller products. The software is owned by
 // TI and/or its suppliers, and is protected under applicable copyright
 // laws. You may not combine this software with "viral" open-source
 // software in order to form a larger program.
-// 
+//
 // THIS SOFTWARE IS PROVIDED "AS IS" AND WITH ALL FAULTS.
 // NO WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT
 // NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
 // A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE. TI SHALL NOT, UNDER ANY
 // CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
 // DAMAGES, FOR ANY REASON WHATSOEVER.
-// 
+//
 // This is part of revision 2.1.0.12573 of the EK-TM4C123GXL Firmware Package.
 //
 //*****************************************************************************
@@ -91,13 +91,18 @@ extern void dmu_GetMeasurements(iic_userAction cb);
 struct {
 	uint8_t readBuffer[1];
 	bool samplesReady;
+	bool sampes_read;
 	uint32_t cnt;
-
 }main_data = {{0}, false, 0};
 
 #include "peripheral/dmu_simple.h"
 
 void PrintMeters(int32_t meters);
+
+void sampes_read_flagger()
+{
+    samples_read = true;
+}
 
 int main(void)
 {
@@ -129,18 +134,9 @@ int main(void)
 
     	if (main_data.samplesReady)
     	{
-    		if (main_data.cnt++ > 1)
-    		{
-    	    	dmu_GetMeasurements(dmu_PrintFormattedMeasurements);
-    	    	main_data.cnt = 0;
-    		}
+    	    	dmu_GetMeasurements(process_samples_and_print);
     		main_data.samplesReady = false;
-
     	}
-    	/*SysCtlDelay(SysCtlClockGet() / 10 / 3);
-
-    	dmu_GetMeasurements(dmu_PrintFormattedMeasurements);
-    	*/
     }
 }
 

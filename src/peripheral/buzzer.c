@@ -68,10 +68,8 @@ void buzzer_init()
 				sTIMER(TIMER_BUZZER_SEQ), sequencer_prescaler);
 }
 
-void buzzer_play_note(char note, )
+void buzzer_play_note(int period, int semiperiod)
 {
-
-
 	TimerPWMLoadSet16(BASE_PERIPH(TIMER_BUZZER), sTIMER(TIMER_BUZZER_SYN),
 							period);
 	TimerPWMMatchSet16(BASE_PERIPH(TIMER_BUZZER), sTIMER(TIMER_BUZZER_SYN),
