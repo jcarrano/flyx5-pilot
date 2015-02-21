@@ -110,7 +110,7 @@ Unusable	PC0
 #define DMU_SDA         B,	3,	I2C0SDA, 	I2C,
 
 /* sensor interrupts */
-#define	DMU_INT         E,	3,			GPIOInput,	ACT_??
+#define	DMU_INT         E,	3,			GPIOInput,	ACT_RISE
 #define	MAG_INT         E,	4,			GPIOInput,	ACT_??
 #define	ALT_INT12       E,	5,			GPIOInput,	ACT_??
 
@@ -157,12 +157,13 @@ Unusable	PC0
 
 /* *********************** Peripherals used **************************** */
 
-#define UART_DEBUG	UART0
-#define BUS_SENSORS	I2C1
-#define BUS_DMU		I2C0
-
+#define UART_DEBUG_NUM 0
 #define BUS_SENSORS_NUM	1
 #define BUS_DMU_NUM 	0
+
+#define UART_DEBUG	GLUE(UART, UART_DEBUG_NUM)
+#define BUS_SENSORS	GLUE(I2C, BUS_SENSORS_NUM)
+#define BUS_DMU		GLUE(I2C, BUS_DMU_NUM)
 
 /* Timers for ultrasound */
 #define TIMER_ULTRA	TIMER1

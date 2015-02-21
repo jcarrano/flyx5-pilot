@@ -1,3 +1,10 @@
+//*****************************************************************************
+//
+//! \addtogroup iic_interface
+//! @{
+//
+//*****************************************************************************
+
 #include "iic_interface.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
@@ -218,8 +225,10 @@ void iic_InterruptHandler(uint8_t moduleNumber, uint32_t moduleBase, uint32_t in
 	}
 
 	// Error detection
-	if (I2CMasterErr(moduleBase) != I2C_MASTER_ERR_NONE)
+	uint32_t a = I2CMasterErr(moduleBase);
+	if (a != I2C_MASTER_ERR_NONE)
 	{
+		UARTprintf("a: %d\n\r", a);
 		IntDisable(interruptBase);
 
 		iic_dataPtr->eotCB = iic_dataPtr->commFailedCB;
@@ -232,7 +241,10 @@ void iic_InterruptHandler(uint8_t moduleNumber, uint32_t moduleBase, uint32_t in
 	}
 	else
 	{
-		iic_dataPtr->eotCB();
+		if (iic_dataPtr->eotCB != NULL)
+		{
+			iic_dataPtr->eotCB();
+		}
 	}
 
 	while(I2CMasterIntStatus(moduleBase, false) == true)	// IntClear is not immediate, make sure int flag is clear.
@@ -423,24 +435,6 @@ void iic_FullStagesReceive (uint8_t moduleNumber)
 
 	return;
 }
-/*
-void iic_read_start (void)
-{
-	if (iic_commData.dataSize == 0)		// Acá pregunto por 0, a read le mando 1 porque quiero leer 1...
-	{
-		IIC_NOT_ACKNOWLEDGE_DATA();
-		iic_data.currCB = iic_data.eotCB;
-	}
-	else
-	{
-		IIC_ACKNOWLEDGE_DATA();
-		iic_data.currCB = iic_read;
-	}
-
-	IIC_SET_AS_RX();
-	iic_commData.data[0] = IIC_RECEIVE(); //Dummy read - faster if the index is fixed in compile time.
-}
-*/
 
 void iic_Read (uint8_t moduleNumber)
 {
@@ -451,9 +445,7 @@ void iic_Read (uint8_t moduleNumber)
 
 	if (iic_dataPtr->dataIdx++ == (iic_commDataPtr->dataSize-1))	// receive last byte
 	{
-		//IIC_NOT_ACKNOWLEDGE_DATA();
 		I2CMasterControl(IIC_MODULE_BASE(moduleNumber), I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
-        //iic_data.currCB = iic_data.eotCB;
 		iic_dataPtr->currCB = NULL;
     }
 	else
@@ -461,18 +453,18 @@ void iic_Read (uint8_t moduleNumber)
 		I2CMasterControl(IIC_MODULE_BASE(moduleNumber), I2C_MASTER_CMD_BURST_RECEIVE_CONT);
 	}
 
-    //iic_commData.dataPtr[iic_data.dataIdx] = IIC_RECEIVE();
-
     return;
 }
 
-
-
-/*
- * For debugging purposes; slave must be connected for interrupt handler to be called.
- *
- */
 void iic_EnterLoopbackMode(void)
 {
 	HWREG(IIC_SINGLE_MODULE_BASE + I2C_O_MCR) |= 0x01;
 }
+
+
+//*****************************************************************************
+//
+// Close the Doxygen group.
+//! @}
+//
+//*****************************************************************************

@@ -2,6 +2,7 @@
 #include "../xdriver/iic_interface.h"
 #include "../debug_tools/debug.h"
 #include "../utils/uartstdio.h"
+#include "../xdriver/gpio_interface.h"
 
 struct dmu_data_T dmu_data = {false, NULL, 0, {false, 0, 0, 0, 0, NULL} };
 
@@ -13,7 +14,7 @@ void dmu_InitFailed(void);
 void dmu_StagesInit();
 void dmu_CommFailed(void);
 
-iic_commData_T * dmu_commDataPtr = &(iic_commData[DMU_MODULE_NUMBER]);
+iic_commData_T* dmu_commDataPtr = &(iic_commData[DMU_MODULE_NUMBER]);
 
 void dmu_Init()
 {
@@ -24,6 +25,7 @@ void dmu_Init()
 		return;
 
 	iic_Init(DMU_MODULE_NUMBER);
+	gpio_Init(DMU_INT_PORT_NUM, DMU_INT_PIN, GPIO_RISING_EDGE);
 
 	dmu_StagesInit();
 
@@ -70,12 +72,12 @@ void dmu_StagesInit()
 		dmu_commDataPtr->data[2] = CONFIG;				// 26
 		dmu_commDataPtr->data[3] = GYRO_CONFIG(GYRO_X_SELFTEST, GYRO_Y_SELFTEST, GYRO_Z_SELFTEST);		// 27
 		dmu_commDataPtr->data[4] = ACCEL_CONFIG(ACCEL_X_SELFTEST, ACCEL_Y_SELFTEST, ACCEL_Z_SELFTEST);	//28
-		dmu_commDataPtr->data[5] = FREE_FALL_THRESHOLD;
-		dmu_commDataPtr->data[6] = FREE_FALL_DURATION;
+		dmu_commDataPtr->data[5] = ACCEL_CFG_2;
+		dmu_commDataPtr->data[6] = ACCEL_LOW_POWER_CFG;
 		dmu_commDataPtr->data[7] = MOTION_INT_THRESHOLD;
-		dmu_commDataPtr->data[8] = MOTION_INT_DURATION;
-		dmu_commDataPtr->data[9] = ZERO_MOTION_THRESHOLD;
-		dmu_commDataPtr->data[10] = ZERO_MOTION_DURATION;
+		dmu_commDataPtr->data[8] = MOTION_INT_DURATION;		// Not used in 6500
+		dmu_commDataPtr->data[9] = ZERO_MOTION_THRESHOLD;	// Not used in 6500
+		dmu_commDataPtr->data[10] = ZERO_MOTION_DURATION;	// Not used in 6500
 		dmu_commDataPtr->data[11] = FIFO_ENABLE;
 
 		dmu_Send (dmu_StagesInit, dmu_InitFailed, 12, NULL);
@@ -102,7 +104,7 @@ void dmu_StagesInit()
 		dmu_commDataPtr->data[0] = ADD_SIGNAL_PATH_RESET;
 		dmu_commDataPtr->data[1] = RESET_SIGNAL(1,1,1);
 		dmu_commDataPtr->data[2] = MOTION_DETECT_CTRL;
-		dmu_commDataPtr->data[3] = USER_CTRL(0,1,1);	// Run means not reset.
+		dmu_commDataPtr->data[3] = USER_CTRL(DMP_DISABLE, FIFO_MASTER_DISABLE,FIFO_RESET,SIGNAL_PATH_RESET);	// Run means not reset.
 		dmu_commDataPtr->data[4] = PWR_MGMT_1_RUN;
 		// PWR_MGMT_2 stays in 0 (reset value).
 
@@ -125,9 +127,9 @@ void dmu_StagesInit()
 
 
 	case 6:
-
-		dmu_commDataPtr->data[0] = ADD_USER_CTRL;									\
-		dmu_commDataPtr->data[1] = USER_CTRL(FIFO_MASTER_ENABLE, FIFO_RESET, 1);	\
+		// Fifo reset
+		dmu_commDataPtr->data[0] = ADD_USER_CTRL;
+		dmu_commDataPtr->data[1] = USER_CTRL(DMP_DISABLE, FIFO_MASTER_DISABLE, FIFO_RESET, SIGNAL_PATH_RESET);
 		dmu_Send(dmu_StagesInit, dmu_InitFailed, 2, NULL);
 		dmu_data.stage++;
 
@@ -157,8 +159,6 @@ void dmu_InitFailed()
 
 #endif
 
-	gled_On();
-
 	while(1);
 
 }
@@ -169,11 +169,18 @@ void dmu_GetMeasurements(iic_userAction cb)
 	return;
 }
 
+int16_t e16toh(const uint16_t big_endian_16bits);
+
 void dmu_PrintFormattedMeasurements(void)
 {
 	struct dmu_measurements_T* dm = &dmu_measurements;
-	UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dm->accel.x, dm->accel.y, dm->accel.z, dm->gyro.x, dm->gyro.y, dm->gyro.z);
+	UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", (int)e16toh(dm->accel.x), (int)e16toh(dm->accel.y), (int)e16toh(dm->accel.z), (int)e16toh(dm->gyro.x), (int)e16toh(dm->gyro.y), (int)e16toh(dm->gyro.z));
 	return;
+}
+
+int16_t e16toh(const uint16_t big_endian_16)
+{
+	return (int16_t) (((big_endian_16 >> 8) & 0x00FF) | ((big_endian_16 << 8) & 0xFF00));
 }
 
 void dmu_CommFailed(void)
