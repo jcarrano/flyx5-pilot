@@ -42,9 +42,7 @@ void UARTStringPut(uint32_t ui32Base, const char *s)
 }
 
 /**
- * Send a string to the UART, blocks execution until done.
- *
- * String must be null terminated.
+ * Convert int to string and send to UART, blocks execution until done.
  */
 void UARTIntPut(uint32_t ui32Base, int x)
 {

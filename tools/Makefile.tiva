@@ -2,7 +2,7 @@
 #   by Juan I Carrano <juan@carrano.com.ar>
 #
 
-CROSS ?= arm-none-eabi-
+CROSS ?= arm-stellaris-eabi-
 
 CPART=-mthumb             \
        -mcpu=cortex-m4	\
