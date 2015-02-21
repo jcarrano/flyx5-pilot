@@ -32,7 +32,7 @@ typedef enum
 
 
 // Set this value; an approximation will be used as sample rate according to the divider.
-#define SAMPLE_RATE (2)		// Reg 25
+#define SAMPLE_RATE (10)		// Reg 25
 #define GYRO_FULLSCALE (FS_2000)	// Regs 27 & 28
 #define ACCEL_FULLSCALE (FS_16G)
 
@@ -65,9 +65,6 @@ enum {FIFO_OVERWRITE_OLD=0, FIFO_DISCARD=1};
 // Reg 25: ADD_SAMPLE_RATE_DIVIDER - DATA: (FCHOICE shall be 11)
 #define SAMPLE_RATE_DIVIDER (1000/SAMPLE_RATE-1)
 
-#if SAMPLE_RATE_DIVIDER > 256
-#warning "Check LP_FILTER_CONFIG and SAMPLE_RATE"
-#endif
 
 // Real sampling rates after setting divider based in desired sample rate.
 #define GYRO_SAMPLE_RATE ((LP_FILTER_CONFIG == 0) ? (8000/(1+SAMPLE_RATE_DIVIDER)) : (1000/(1+SAMPLE_RATE_DIVIDER)))

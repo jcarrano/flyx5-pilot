@@ -12,7 +12,7 @@
 
 #define UART_MODULE_BASE UART0_BASE
 
-void puts(char* str);
+void _puts(char* str);
 
 
 #endif /* STDIO_SIMPLE_H_ */

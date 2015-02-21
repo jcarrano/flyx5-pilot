@@ -242,7 +242,6 @@ void iic_InterruptHandler(uint8_t moduleNumber, uint32_t moduleBase, uint32_t in
 	}
 	else if(iic_dataPtr->eotCB != NULL)
 	{
-		Putchar('c');
 		iic_dataPtr->eotCB();
 	}
 
