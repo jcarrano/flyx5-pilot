@@ -42,9 +42,7 @@ void UARTStringPut(uint32_t ui32Base, const char *s)
 }
 
 /**
- * Send a string to the UART, blocks execution until done.
- *
- * String must be null terminated.
+ * Convert int to string and send to UART, blocks execution until done.
  */
 void UARTIntPut(uint32_t ui32Base, int x)
 {
@@ -95,7 +93,8 @@ int main_carry(void)
     UARTStringPut(BASE_PERIPH(UART_DEBUG), ENDL);
 
     buzzer_init();
-    buzzer_play_note();
+
+    buzzer_play_note(16667, 16667/2);
 
     //
     // Loop forever.
@@ -105,5 +104,12 @@ int main_carry(void)
         int c = R_(UARTCharGet)(BASE_PERIPH(UART_DEBUG));
         c = (c <= 'z' && c >= 'a')? c - 'a' + 'A' : c;
         R_(UARTCharPut)(BASE_PERIPH(UART_DEBUG), c);
+
+        buzzer_play_note(16667, (16667/4)*3);
+
+        c = R_(UARTCharGet)(BASE_PERIPH(UART_DEBUG));
+        R_(UARTCharPut)(BASE_PERIPH(UART_DEBUG), c);
+
+        buzzer_play_note(16667, 16667/2);
     }
 }

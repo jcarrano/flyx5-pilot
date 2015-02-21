@@ -1,7 +1,7 @@
 #ifndef _DMU_DEFINITIONS_H_
 #define _DMU_DEFINITIONS_H_
 
-typedef enum 
+typedef enum
 {
 	FS_250 = 0,
 	FS_500,
@@ -16,7 +16,7 @@ typedef enum
 	FS_4G,
 	FS_8G,
 	FS_16G
-	
+
 }accel_fullScale;	// Shift 3 times
 
 /*
@@ -32,7 +32,7 @@ typedef enum
 
 
 // Set this value; an approximation will be used as sample rate according to the divider.
-#define SAMPLE_RATE (2)			// Reg 25
+#define SAMPLE_RATE (1000)		// Reg 25
 #define GYRO_FULLSCALE (FS_2000)	// Regs 27 & 28
 #define ACCEL_FULLSCALE (FS_16G)
 
@@ -42,7 +42,7 @@ typedef enum
 
 
 /*	Sample rate is Gyro sample rate / (1+SAMPLE_RATE_DIVIDER).`
-	If LP_FILTER_CONFIG is 0, Gyro sample rate is 8 kHz, 
+	If LP_FILTER_CONFIG is 0, Gyro sample rate is 8 kHz,
 	otherwise is 1 kHz.
 	Sample rate affects Gyro and Accel only if it is less
 	than 1 kHz, which is Accel's max sample rate.
@@ -134,7 +134,7 @@ enum {HIGH = 0, LOW};
 #define INT_PIN_CFG ( (INT_LEVEL << 7) | (INT_OPEN_DRAIN << 6) |		\
 					(INT_LATCH_ENABLE << 5) | (INT_FAST_CLEAR << 4) | 	\
 					(I2C_BYPASS_ENABLE << 1) )
-					
+
 // Reg 56: ADD_INT_ENABLE - HEADER
 // FSYNC not implemented (disabled)
 #define MOTION_INT_ENABLE_H MOTION_INT_ENABLE
@@ -197,7 +197,7 @@ enum {WAKE_1_25=0, WAKE_5, WAKE_20, WAKE_40 };	// Wakeup rate in Hz
 // Leave in reset value, no need of stdby any gyro or accel axis.
 
 // Register addresses.
-enum 
+enum
 {
 	ADD_GYRO_OFFSET_X_H = 19,
 	ADD_GYRO_OFFSET_X_L,
@@ -214,13 +214,13 @@ enum
 	ADD_ACCEL_LOW_POWER_CONFIG,		// LP Config
 	ADD_MOTION_THRESHOLD,		// Motion threshold in 32 mg/LSB
 	ADD_MOTION_DURATION,		// Counter for interrupt; ticks every 1 ms and counts upwards if samples are above threshold.
-	ADD_ZERO_MOTION_THRESHOLD, 
-	ADD_ZERO_MOTION_DURATION, 
+	ADD_ZERO_MOTION_THRESHOLD,
+	ADD_ZERO_MOTION_DURATION,
 	ADD_FIFO_ENABLE = 35,
-	
+
 	ADD_INT_PIN_CFG = 55,	// Interrupt config
 	ADD_INT_ENABLE,			// Interrupts accepted.
-	ADD_INT_STATUS = 58,	// Read-only flags; flags are cleared after reading / any read if fast clear is enabled.	
+	ADD_INT_STATUS = 58,	// Read-only flags; flags are cleared after reading / any read if fast clear is enabled.
 	ADD_ACCEL_OUT,			// X, Y, Z, 2 bytes each, High first (Big endian)
 
 	ADD_ACCEL_XOUT_H = 59,
@@ -229,7 +229,7 @@ enum
 	ADD_ACCEL_YOUT_L,
 	ADD_ACCEL_ZOUT_H,
 	ADD_ACCEL_ZOUT_L,
-	
+
 	ADD_TEMP_OUT_H,
 	ADD_TEMP_OUT_L,
 
@@ -241,13 +241,13 @@ enum
 	ADD_GYRO_YOUT_L,
 	ADD_GYRO_ZOUT_H,
 	ADD_GYRO_ZOUT_L,
-	
+
 	ADD_SIGNAL_PATH_RESET = 104,
 	ADD_MOTION_DETECT_CTRL,			// Interrupt decrement
 	ADD_USER_CTRL,			// fifo enable, reset, etc
 	ADD_PWR_MGMT_1,			// sleep, master reset, clock source, temp disable
 	ADD_PWR_MGMT_2,			// wake up freq, individual ax standby
-	
+
 	ADD_FIFO_CNT_H = 114,
 	ADD_FIFO_CNT_L,
 	ADD_FIFO_RW,			// Read or write FIFO buffer from here (1 kb)
@@ -255,7 +255,7 @@ enum
 
 };
 
-typedef enum 
+typedef enum
 {
 	NONE = 0, ST_Z, ST_Y, ST_YZ, ST_X, ST_XZ, ST_XY, ST_XYZ,
 }axes_selfTest;	// Shift 5 times.

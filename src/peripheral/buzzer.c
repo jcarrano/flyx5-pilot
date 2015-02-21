@@ -50,8 +50,6 @@ struct buzzer_data Buzzer;
 void buzzer_init()
 {
 	uint32_t ckl_freq = R_(SysCtlClockGet)();
-	//uint32_t synthesis_prescaler = (ckl_freq >> 16) / BUZZER_FREQ_LO;
-	uint32_t synthesis_prescaler = 127;
 	uint32_t sequencer_prescaler = (ckl_freq >> 16) * BUZZER_DUR_HI;
 
 	ENABLE_AND_RESET(TIMER_BUZZER);
@@ -62,28 +60,24 @@ void buzzer_init()
 
 	R_(TimerConfigure)(BASE_PERIPH(TIMER_BUZZER),
 			  TIMER_CFG_SPLIT_PAIR
-
 			| TIMER_CFG(TIMER_BUZZER_SYN, _PWM)
-		);/*
-			| TIMER_CFG(TIMER_BUZZER_SYN, _ACT_CLRTO)
-
-
 			| TIMER_CFG(TIMER_BUZZER_SEQ, _ONE_SHOT)
 			);
-		*/
-	//R_(TimerPrescaleSet)(BASE_PERIPH(TIMER_BUZZER),
-	//			sTIMER(TIMER_BUZZER_SYN), synthesis_prescaler);
-	/*
+
 	R_(TimerPrescaleSet)(BASE_PERIPH(TIMER_BUZZER),
 				sTIMER(TIMER_BUZZER_SEQ), sequencer_prescaler);
-	*/
 }
 
-void buzzer_play_note()
+void buzzer_play_note(int period, int semiperiod)
 {
 	TimerPWMLoadSet16(BASE_PERIPH(TIMER_BUZZER), sTIMER(TIMER_BUZZER_SYN),
-							80000);
+							period);
 	TimerPWMMatchSet16(BASE_PERIPH(TIMER_BUZZER), sTIMER(TIMER_BUZZER_SYN),
-							40000);
+							semiperiod);
 	R_(TimerEnable)(BASE_PERIPH(TIMER_BUZZER), sTIMER(TIMER_BUZZER_SYN));
+}
+
+void buzzer_stop_note()
+{
+	R_(TimerDisable)(BASE_PERIPH(TIMER_BUZZER), sTIMER(TIMER_BUZZER_SYN));
 }
