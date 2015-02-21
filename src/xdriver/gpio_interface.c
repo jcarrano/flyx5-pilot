@@ -25,7 +25,7 @@ typedef struct
 
 //#define gpioA_pin0Action main_samplesReady
 
-#define gpioE_pin3Action main_samplesReady
+#define gpioE_pin3Action dmu_SamplesPending
 #define gpioE_pin5Action altimeterINT1ISR
 
 extern void gpioA_pin0Action(void);

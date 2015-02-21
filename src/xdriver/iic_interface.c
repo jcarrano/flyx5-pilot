@@ -228,7 +228,8 @@ void iic_InterruptHandler(uint8_t moduleNumber, uint32_t moduleBase, uint32_t in
 	uint32_t a = I2CMasterErr(moduleBase);
 	if (a != I2C_MASTER_ERR_NONE)
 	{
-		UARTprintf("a: %d\n\r", a);
+		Putchar('-');
+		//UARTprintf("a: %d\n\r", a);
 		IntDisable(interruptBase);
 
 		iic_dataPtr->eotCB = iic_dataPtr->commFailedCB;

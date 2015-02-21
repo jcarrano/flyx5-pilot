@@ -32,7 +32,7 @@ typedef enum
 
 
 // Set this value; an approximation will be used as sample rate according to the divider.
-#define SAMPLE_RATE (1000)		// Reg 25
+#define SAMPLE_RATE (2)		// Reg 25
 #define GYRO_FULLSCALE (FS_2000)	// Regs 27 & 28
 #define ACCEL_FULLSCALE (FS_16G)
 
