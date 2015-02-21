@@ -25,3 +25,4 @@ a.out
 
 syntax: regexp
 .*\#.*\#$
+^Doc/.+

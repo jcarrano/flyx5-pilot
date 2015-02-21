@@ -23,27 +23,41 @@ typedef struct
  * Write function real name in define.
  */
 
-#define gpioA_pin0Action main_samplesReady
+//#define gpioA_pin0Action main_samplesReady
+
+#define gpioE_pin3Action main_samplesReady
+#define gpioE_pin5Action altimeterINT1ISR
 
 extern void gpioA_pin0Action(void);
+extern void gpioE_pin3Action(void);
+extern void gpioE_pin5Action(void);
 
-const gpio_PinAction GPIOA_PIN_ACTIONS[] = {
+const gpio_PinAction GPIOA_PIN_ACTIONS[0];
+
+
+const gpio_PinAction GPIOE_PIN_ACTIONS[] = {
 	{
-		GPIO_PIN_2,
-		gpioA_pin0Action
-	}
+		GPIO_PIN_3,
+		gpioE_pin3Action
+	},
+/*	{
+		GPIO_PIN_5,
+		gpioE_pin5Action
+	}*/
 };
-
 
 // Constants and Macros
 const uint32_t GPIO_BASES[] = {GPIO_PORTA_BASE, GPIO_PORTB_BASE, GPIO_PORTC_BASE, GPIO_PORTD_BASE, GPIO_PORTE_BASE};
-#define GPIO_BASE(x) (GPIO_BASES[x])
+//#define GPIO_BASE(x) (GPIO_BASES[x])
 
+const uint32_t GPIO_INTS[] = {INT_GPIOA, INT_GPIOB, INT_GPIOC, INT_GPIOD, INT_GPIOE};
+#define GPIO_INT(x) (GPIO_INTS[x])
 
 // Internal Symbols
 void gpioA_InterruptHandler(void);
 void gpio_ExecuteActions(uint32_t gpioBase, const gpio_PinAction pinActions[], uint8_t activeActions);
 
+void gpioE_InterruptHandler(void);
 
 
 void gpio_Init(uint8_t gpioNumber, uint32_t gpioPins, uint32_t gpioIntType)
@@ -56,7 +70,7 @@ void gpio_Init(uint8_t gpioNumber, uint32_t gpioPins, uint32_t gpioIntType)
 	GPIOIntTypeSet(gpioBase, gpioPins, gpioIntType);
 
 	GPIOIntEnable(gpioBase, gpioPins);
-	IntEnable(INT_GPIOA);
+	IntEnable(GPIO_INT(gpioNumber));
 	IntMasterEnable();
 
 	return;
@@ -67,6 +81,13 @@ void gpioA_InterruptHandler(void)
 	gpio_ExecuteActions(GPIO_PORTA_BASE, GPIOA_PIN_ACTIONS, sizeof(GPIOA_PIN_ACTIONS) / (sizeof(uint32_t) + sizeof(gpio_ptr)));
 	return;
 }
+
+void gpioE_InterruptHandler(void)
+{
+	gpio_ExecuteActions(GPIO_PORTE_BASE, GPIOE_PIN_ACTIONS, sizeof(GPIOE_PIN_ACTIONS) / (sizeof(uint32_t) + sizeof(gpio_ptr)));
+	return;
+}
+
 
 /*
 void gpio_dExecuteActions(int8_t gpioNumber)
@@ -96,11 +117,11 @@ void gpio_ExecuteActions(uint32_t gpioBase, const gpio_PinAction pinActions[], u
 			{
 				GPIOIntClear(gpioBase, pinActions[i].GPIO_INT_PIN);
 				pinActions[i].action();
-
+/*
 				while(GPIOIntStatus(gpioBase, false) & pinActions[i].GPIO_INT_PIN)
 				{
 					GPIOIntClear(gpioBase, pinActions[i].GPIO_INT_PIN);
-				}
+				}*/
 
 			}
 		}
