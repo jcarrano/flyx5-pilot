@@ -1,7 +1,7 @@
 #include "stdio_simple.h"
 #include "driverlib/uart.h"
 
-void puts(char* str)
+void _puts(char* str)
 {
 	int index = 0;
 

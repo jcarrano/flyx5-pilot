@@ -52,6 +52,7 @@ extern void iic1_InterruptHandler(void);
 extern void UARTprintf(const char *pcString, ...);
 extern void gpioA_InterruptHandler(void);
 extern void gpioE_InterruptHandler(void);
+extern void _puts(char*);
 
 
 //*****************************************************************************
@@ -76,7 +77,7 @@ extern int main(void);
 // Reserve space for the system stack.
 //
 //*****************************************************************************
-static uint32_t pui32Stack[64];
+static uint32_t pui32Stack[512];
 
 //*****************************************************************************
 //
@@ -344,7 +345,7 @@ static void
 FaultISR(void)
 {
 
-	UARTprintf("Fault ISR\n\r");
+	_puts("Fault ISR\n\r");
     //
     // Enter an infinite loop.
     //

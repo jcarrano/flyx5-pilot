@@ -109,7 +109,7 @@ int main(void)
 
 	//altimeter_Init();
 
-	UARTprintf("init done\n\r");
+	_puts("init done\n\r");
 
 	//rled_On();
 	//dmu_ReceiveFromRegister(ADD_WHO_AM_I, readSuccess, readFail, 1, main_data.readBuffer);
@@ -140,7 +140,8 @@ int main(void)
 
     	if(dmu_PumpEvents(&dmuSamples))
     	{
-    		UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dmuSamples.accel.x, dmuSamples.accel.y, dmuSamples.accel.z, dmuSamples.gyro.x, dmuSamples.gyro.y, dmuSamples.gyro.z);
+    		UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dmuSamples.accel.x.v, dmuSamples.accel.y.v,
+    					dmuSamples.accel.z.v, dmuSamples.gyro.x.v, dmuSamples.gyro.y.v, dmuSamples.gyro.z.v);
     	}
 
     }
@@ -185,12 +186,12 @@ void main_Init()
     //
     // Hello!
     //
-    UARTprintf("Hugo la concha de tu madre!\n");
+    _puts("Hugo la concha de tu madre!\n");
 
 	iic_Init(DMU_MODULE_NUMBER);
 	//iic_EnterLoopbackMode();
 
-	err_Init(NULL, puts, NULL);
+	err_Init(NULL, _puts, NULL);
 }
 
 

@@ -44,7 +44,7 @@ void dmu_Init()
 static int16_t _parse_sample(const uint8_t sample[2])
 {
 	//return (int16_t) (((big_endian_16 >> 8) & 0x00FF) | ((big_endian_16 << 8) & 0xFF00));
-	return ((int16_t)sample[0]) * 256 + sample[1];
+	return ((uint16_t)(sample[0])) * 256 + sample[1];
 }
 
 static struct dmu_samples_T _parse_frame()
@@ -105,7 +105,7 @@ void dmu_StagesInit()
 	case 0:
 
 		dmu_commDataPtr->data[0] = ADD_PWR_MGMT_1;
-		dmu_commDataPtr->data[1] = 0;//PWR_MGMT_1_STOP;
+		dmu_commDataPtr->data[1] = PWR_MGMT_1_STOP;
 
 		dmu_Send (dmu_StagesInit, dmu_InitFailed, 2, NULL);
 
