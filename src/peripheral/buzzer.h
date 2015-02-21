@@ -9,6 +9,6 @@
 
 void buzzer_init();
 
-void buzzer_play_note();
+void buzzer_play_note(unsigned int period, unsigned int semiperiod);
 
 #endif /* BUZZER_H */
