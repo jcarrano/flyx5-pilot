@@ -45,8 +45,6 @@
 #include "peripheral/dmu_6500.h"
 #include "xdriver/gpio_interface.h"
 
-
-
 void main_samplesReady(void);
 
 //*****************************************************************************
@@ -86,7 +84,7 @@ void readFail(void);
 
 
 extern void dmu_PrintFormattedMeasurements(void);
-extern void dmu_GetMeasurements(iic_userAction cb);
+
 
 struct {
 	uint8_t readBuffer[1];
@@ -102,6 +100,7 @@ void PrintMeters(int32_t meters);
 int main(void)
 {
     //volatile uint32_t ui32Loop;
+	struct dmu_samples_T dmuSamples;
 
 	main_Init();
 
@@ -120,12 +119,12 @@ int main(void)
 
     while(1)
     {
-
+/*
     	if (altimeter_meas_ready == true)
     	{
     		altimeter_Measure(PrintMeters, NULL); // eot recibe un int32_t con la medicion de altura
     	}
-
+*/
 /*
     	if (main_data.samplesReady)
     	{
@@ -138,6 +137,12 @@ int main(void)
 
     	}
     	*/
+
+    	if(dmu_PumpEvents(&dmuSamples))
+    	{
+    		UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dmuSamples.accel.x, dmuSamples.accel.y, dmuSamples.accel.z, dmuSamples.gyro.x, dmuSamples.gyro.y, dmuSamples.gyro.z);
+    	}
+
     }
 }
 
@@ -234,19 +239,5 @@ void readSuccess(void)
 void readFail(void)
 {
 	UARTprintf("Read Fail.\n\r");
-}
-
-void main_samplesReady(void)
-{
-	uint32_t a = GPIOIntTypeGet(DMU_INT_PORT, DMU_INT_PIN_NUM);
-	if (a == GPIO_RISING_EDGE)
-	{
-		GPIOIntTypeSet(DMU_INT_PORT, DMU_INT_PIN, GPIO_FALLING_EDGE);
-		main_data.samplesReady = true;
-	}
-	else
-	{
-		GPIOIntTypeSet(DMU_INT_PORT, DMU_INT_PIN, GPIO_RISING_EDGE);
-	}
 }
 

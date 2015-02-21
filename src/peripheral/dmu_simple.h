@@ -1,10 +1,10 @@
 #ifndef _DMUSIMPLE_H_INCLUDED_
 #define _DMUSIMPLE_H_INCLUDED_
 
+#include <fixed_point/vector_types.h>
 #include "../common.h"
 #include "../xdriver/iic_interface.h"
 #include "dmu_6500.h"
-#include "../Misc/arith.h"
 #include "../flyx5_hw.h"
 
 #define MPU_LOW_BIT 0x01
@@ -17,6 +17,22 @@
 #define DMU_INT_PIN_NUM 3
 #define DMU_INT_PIN GLUE(GPIO_PIN_, DMU_INT_PIN_NUM)
 
+typedef enum {DMU_IDLE = 0, DMU_SAMPLES_PENDING, DMU_BUSY, DMU_SAMPLES_READY} DMU_STATUS;
+
+#define DMU_SAMPLE_BYTES 2
+
+// Measurements taken individually must respect MPU internal registers' order
+enum DMU_DATA_FRAME {
+	DMU_FRAME_ACCEL_X,
+	DMU_FRAME_ACCEL_Y,
+	DMU_FRAME_ACCEL_Z,
+	DMU_FRAME_TEMP,
+	DMU_FRAME_GYRO_X,
+	DMU_FRAME_GYRO_Y,
+	DMU_FRAME_GYRO_Z,
+	DMU_FRAME_N_ELEM
+};
+
 struct dmu_data_T
 {
 	bool init;
@@ -24,37 +40,23 @@ struct dmu_data_T
 	iic_ptr userCb;
 	uint8_t stage;
 
-	struct
-	{
-		bool enable;
-		int8_t fetchTimes;
-		uint8_t remainingBytes;
-		uint16_t count;
-		uint8_t avgDiscard;
-		iic_ptr stageCb;
-	}fifo;
+	volatile DMU_STATUS status;
+
+	uint8_t _frame_buffer[DMU_FRAME_N_ELEM][DMU_SAMPLE_BYTES];
 };
 
-struct dmu_measurements_T
+struct dmu_samples_T
 {
-	s16Vec3 accel;
-
-	int16_t temp;
-
-	s16Vec3 gyro;
-}__attribute__((__packed__));
+	vec3_s16 accel;
+	vec3_s16 gyro;
+};
 
 extern struct dmu_data_T dmu_data;
 
 void dmu_Init(void);
 
-extern void dmu_InitFailed(void);
+bool dmu_PumpEvents(struct dmu_samples_T* samplesPtr);
 
-#define dmu_Send(eotCB, commFailedCB, toWrite, sendBuffer)	\
-	(iic_Send (DMU_MODULE_NUMBER, MPU_ADDRESS, eotCB, commFailedCB, toWrite, sendBuffer) )
-
-#define dmu_ReceiveFromRegister(regAddress, eotCB, commFailedCB, toRead, receiveBuffer)			\
-	(iic_ReceiveFromRegister (DMU_MODULE_NUMBER, regAddress, MPU_ADDRESS, eotCB, 				\
-			commFailedCB, toRead, receiveBuffer) )
+void dmu_GetMeasurements(void);
 
 #endif 	// _DMUSIMPLE_H_INCLUDED_
