@@ -19,11 +19,13 @@ TOOLSPATH=../tools
 
 # Where to find header files that do not live in the source directory.
 #
-IPATH=-I${ROOT}/ext_libs
+IPATH=-I${ROOT}/ext_libs -I${ROOT}/ext_libs/fixed_point/include
+
+CPPFLAGS=-DFXP_C99_INLINE
 
 # libraries
-LDPATH=-L${ROOT}/ext_libs/driverlib
-LIBRARIES=-ldrivers
+LDPATH=-L${ROOT}/ext_libs/driverlib -L${ROOT}/ext_libs/fixed_point
+LIBRARIES=-ldrivers -lfxp
 
 DEBUG_FLAGS=-dA -g3
 
