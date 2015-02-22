@@ -4,20 +4,20 @@
 //
 // Copyright (c) 2012-2014 Texas Instruments Incorporated.  All rights reserved.
 // Software License Agreement
-// 
+//
 // Texas Instruments (TI) is supplying this software for use solely and
 // exclusively on TI's microcontroller products. The software is owned by
 // TI and/or its suppliers, and is protected under applicable copyright
 // laws. You may not combine this software with "viral" open-source
 // software in order to form a larger program.
-// 
+//
 // THIS SOFTWARE IS PROVIDED "AS IS" AND WITH ALL FAULTS.
 // NO WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT
 // NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
 // A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE. TI SHALL NOT, UNDER ANY
 // CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
 // DAMAGES, FOR ANY REASON WHATSOEVER.
-// 
+//
 // This is part of revision 2.1.0.12573 of the EK-TM4C123GXL Firmware Package.
 //
 //*****************************************************************************
@@ -44,6 +44,8 @@
 #include "debug_tools/stdio_simple.h"
 #include "peripheral/dmu_6500.h"
 #include "xdriver/gpio_interface.h"
+
+#include "control/nlcf.h"
 
 void main_samplesReady(void);
 
@@ -83,7 +85,7 @@ void readSuccess(void);
 void readFail(void);
 
 
-void dmu_PrintFormattedMeasurements(struct dmu_samples_T* dmuSamples);
+extern void dmu_PrintFormattedMeasurements(void);
 
 
 struct {
@@ -97,36 +99,44 @@ struct {
 
 void PrintMeters(int32_t meters);
 
+void UARTputraw16(uint16_t x)
+{
+    UARTCharPut(UART0_BASE, x / 256);
+    UARTCharPut(UART0_BASE, x & 0xFF);
+}
+
 int main(void)
 {
-    //volatile uint32_t ui32Loop;
-	struct dmu_samples_T dmuSamples;
+    struct dmu_samples_T dmuSamples;
+    struct nlcf_state state;
 
-	main_Init();
+    main_Init();
 
-	dmu_Init();
+    dmu_Init();
 
-	//altimeter_Init();
+    nlcf_init(&state);
 
-	_puts("init done\n\r");
+    _puts("init done\n\r");
 
-	//rled_On();
-	//dmu_ReceiveFromRegister(ADD_WHO_AM_I, readSuccess, readFail, 1, main_data.readBuffer);
-
-	//UARTprintf("gasssss\n\r");
-	//altimeter_CommenceMeasurement();
 
     while(1)
     {
-/*
-    	if (altimeter_meas_ready == true)
-    	{
-    		altimeter_Measure(PrintMeters, NULL); // eot recibe un int32_t con la medicion de altura
-    	}
-*/
+
     	if(dmu_PumpEvents(&dmuSamples))
     	{
-    		dmu_PrintFormattedMeasurements(&dmuSamples);
+    		/*
+		UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dmuSamples.accel.x.v, dmuSamples.accel.y.v,
+    					dmuSamples.accel.z.v, dmuSamples.gyro.x.v, dmuSamples.gyro.y.v, dmuSamples.gyro.z.v);
+		*/
+		nlcf_process(&state, dmuSamples.gyro, dmuSamples.accel, NULL);
+
+		quat q_est = dq_to_q(state.q);
+
+		_puts("\x0E\x0C");
+		UARTputraw16(q_est.r.v);
+		UARTputraw16(q_est.v.x.v);
+		UARTputraw16(q_est.v.y.v);
+		UARTputraw16(q_est.v.z.v);
     	}
 
     }
