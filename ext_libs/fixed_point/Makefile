@@ -16,7 +16,7 @@ PART=TM4C1237H6PM
 MAKE_LIBRARY=true
 THIN_ARCHIVE=true
 
-CPPFLAGS += -Dgcc
+CPPFLAGS += -Dgcc -DFXP_C99_INLINE
 
 # The base directory
 #
