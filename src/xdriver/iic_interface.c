@@ -160,8 +160,6 @@ void iic_Init(uint8_t moduleNumber)
     SysCtlPeripheralEnable(peripheral);
     SysCtlPeripheralReset(peripheral);	// see TODO
 
-    SysCtlDelay(80000);
-
     // Configure GPIO Pins for I2C mode. ; see TODO
     GPIOPinConfigure(sda);
     GPIOPinTypeI2C(port, sdaPin);
@@ -215,7 +213,9 @@ void iic_InterruptHandler(uint8_t moduleNumber, uint32_t moduleBase, uint32_t in
 
 	I2CMasterIntClear(moduleBase);		// Clear interrupt source early as stated in Driver Library User Manual
 
-	Putchar('z');
+	#ifdef IIC_DEBUG
+		Putchar('z');
+	#endif
 
 	// End of Transmission detection
 	if (iic_dataPtr->currCB == NULL)
@@ -235,8 +235,9 @@ void iic_InterruptHandler(uint8_t moduleNumber, uint32_t moduleBase, uint32_t in
 	uint32_t a = I2CMasterErr(moduleBase);
 	if (a != I2C_MASTER_ERR_NONE)
 	{
-		Putchar('-');
-		//UARTprintf("a: %d\n\r", a);
+		#ifdef IIC_DEBUG
+			Putchar('-');
+		#endif
 		IntDisable(interruptBase);
 
 		iic_dataPtr->eotCB = iic_dataPtr->commFailedCB;
