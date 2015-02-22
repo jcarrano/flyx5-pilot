@@ -77,6 +77,7 @@ void iic3_FullStagesReceive(void);
 // Indexers for modules
 
 const uint32_t IIC_MODULE_BASES[] = {I2C0_BASE, I2C1_BASE, I2C2_BASE, I2C3_BASE};
+
 #define IIC_MODULE_BASE(x) (IIC_MODULE_BASES[x])
 
 const iic_userAction IIC_STAGES_RECEIVE_PTRS[] = {iic0_FullStagesReceive, iic1_FullStagesReceive, iic2_FullStagesReceive, iic3_FullStagesReceive};
@@ -87,12 +88,12 @@ const iic_userAction IIC_STAGES_RECEIVE_PTRS[] = {iic0_FullStagesReceive, iic1_F
 // TODO: use tables to make it multi-module usable
 void iic_Init(uint8_t moduleNumber)
 {
-	uint32_t gpio, peripheral, port;
+	uint32_t iic_base, peripheral, port, port_sysctl;
 	uint32_t sda, scl;
 	uint32_t sdaPin, sclPin;
 	uint32_t interrupt;
 
-	gpio = IIC_MODULE_BASE(moduleNumber);
+	iic_base = IIC_MODULE_BASE(moduleNumber);
 	peripheral = SYSCTL_PERIPH_I2C0 + moduleNumber;
 
 	switch(moduleNumber)
@@ -105,6 +106,7 @@ void iic_Init(uint8_t moduleNumber)
 			sdaPin = GPIO_PIN_3;
 
 			port = GPIO_PORTB_BASE;
+			port_sysctl = SYSCTL_PERIPH_GPIOB;
 			interrupt = INT_I2C0;
 
 			break;
@@ -117,6 +119,7 @@ void iic_Init(uint8_t moduleNumber)
 			sdaPin = GPIO_PIN_7;
 
 			port = GPIO_PORTA_BASE;
+			port_sysctl = SYSCTL_PERIPH_GPIOA;
 			interrupt = INT_I2C1;
 
 			break;
@@ -129,6 +132,7 @@ void iic_Init(uint8_t moduleNumber)
 			sdaPin = GPIO_PIN_5;
 
 			port = GPIO_PORTE_BASE;
+			port_sysctl = SYSCTL_PERIPH_GPIOE;
 			interrupt = INT_I2C2;
 
 			break;
@@ -141,6 +145,7 @@ void iic_Init(uint8_t moduleNumber)
 			sdaPin = GPIO_PIN_1;
 
 			port = GPIO_PORTD_BASE;
+			port_sysctl = SYSCTL_PERIPH_GPIOD;
 			interrupt = INT_I2C3;
 
 			break;
@@ -148,12 +153,12 @@ void iic_Init(uint8_t moduleNumber)
 	}
 
     // Enable the GPIO Peripheral used by the I2C.
-	SysCtlPeripheralReset(gpio);
-    SysCtlPeripheralEnable(gpio);
+    SysCtlPeripheralEnable(port_sysctl);
+    SysCtlPeripheralReset(port_sysctl);
 
     // Enable I2C0
-    SysCtlPeripheralReset(peripheral);	// see TODO
     SysCtlPeripheralEnable(peripheral);
+    SysCtlPeripheralReset(peripheral);	// see TODO
 
     // Configure GPIO Pins for I2C mode. ; see TODO
     GPIOPinConfigure(sda);
@@ -163,11 +168,11 @@ void iic_Init(uint8_t moduleNumber)
 
 
     //Start Module
-	I2CMasterInitExpClk(gpio, SysCtlClockGet(), true);
+	I2CMasterInitExpClk(iic_base, SysCtlClockGet(), true);
 
 	IntEnable(interrupt);	// See TODO
 
-	I2CMasterIntEnableEx(gpio, I2C_MASTER_INT_DATA);
+	I2CMasterIntEnableEx(iic_base, I2C_MASTER_INT_DATA);
 	//I2CMasterIntEnable(IIC_MODULE_BASE);
 
 	IntMasterEnable();
@@ -208,7 +213,9 @@ void iic_InterruptHandler(uint8_t moduleNumber, uint32_t moduleBase, uint32_t in
 
 	I2CMasterIntClear(moduleBase);		// Clear interrupt source early as stated in Driver Library User Manual
 
-	Putchar('z');
+	#ifdef IIC_DEBUG
+		Putchar('z');
+	#endif
 
 	// End of Transmission detection
 	if (iic_dataPtr->currCB == NULL)
@@ -228,8 +235,9 @@ void iic_InterruptHandler(uint8_t moduleNumber, uint32_t moduleBase, uint32_t in
 	uint32_t a = I2CMasterErr(moduleBase);
 	if (a != I2C_MASTER_ERR_NONE)
 	{
-		Putchar('-');
-		//UARTprintf("a: %d\n\r", a);
+		#ifdef IIC_DEBUG
+			Putchar('-');
+		#endif
 		IntDisable(interruptBase);
 
 		iic_dataPtr->eotCB = iic_dataPtr->commFailedCB;
