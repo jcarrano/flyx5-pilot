@@ -83,7 +83,7 @@ void readSuccess(void);
 void readFail(void);
 
 
-extern void dmu_PrintFormattedMeasurements(void);
+void dmu_PrintFormattedMeasurements(struct dmu_samples_T* dmuSamples);
 
 
 struct {
@@ -106,7 +106,6 @@ int main(void)
 
 	dmu_Init();
 
-
 	//altimeter_Init();
 
 	_puts("init done\n\r");
@@ -125,23 +124,9 @@ int main(void)
     		altimeter_Measure(PrintMeters, NULL); // eot recibe un int32_t con la medicion de altura
     	}
 */
-/*
-    	if (main_data.samplesReady)
-    	{
-    		if (main_data.cnt++ > 1)
-    		{
-    	    	dmu_GetMeasurements(dmu_PrintFormattedMeasurements);
-    	    	main_data.cnt = 0;
-    		}
-    		main_data.samplesReady = false;
-
-    	}
-    	*/
-
     	if(dmu_PumpEvents(&dmuSamples))
     	{
-    		UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dmuSamples.accel.x.v, dmuSamples.accel.y.v,
-    					dmuSamples.accel.z.v, dmuSamples.gyro.x.v, dmuSamples.gyro.y.v, dmuSamples.gyro.z.v);
+    		dmu_PrintFormattedMeasurements(&dmuSamples);
     	}
 
     }
