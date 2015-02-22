@@ -28,6 +28,8 @@ OUT_DIR=.
 #
 IPATH=-I../
 
+DEBUG_FLAGS=-dA -g3
+
 # Include the common make definitions.
 #
 include ${TOOLSPATH}/Makefile.tiva

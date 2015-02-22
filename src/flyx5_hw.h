@@ -28,8 +28,8 @@
 	}
 
 #define CFG_PIN5(port, pin, function, type, activity) { \
-	R_(GPIOPinConfigure)(GPIO_P##port##pin##_##function); \
 	R_(GPIOPinType##type)(GPIO_PORT##port##_BASE, GLUE(GPIO_PIN_, pin)); \
+	R_(GPIOPinConfigure)(GPIO_P##port##pin##_##function); \
 	}
 
 #define CFG_PIN4(port, pin, type, activity, _0) { \
