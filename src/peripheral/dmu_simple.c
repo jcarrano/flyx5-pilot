@@ -13,11 +13,15 @@ void dmu_StagesInit();
 void dmu_CommFailed(void);
 void dmu_SamplesReady(void);
 
-#define dmu_Send(eotCB, commFailedCB, toWrite, sendBuffer)	\
+#define dmu_Send(eotCB, commFailedCB, toWrite, sendBuffer)										\
 	(iic_Send (DMU_MODULE_NUMBER, MPU_ADDRESS, eotCB, commFailedCB, toWrite, sendBuffer) )
 
-#define dmu_ReceiveFromRegister(regAddress, commFailedCB, toRead, receiveBuffer)			\
-	(iic_ReceiveFromRegister (DMU_MODULE_NUMBER, regAddress, MPU_ADDRESS, dmu_SamplesReady, 				\
+#define dmu_ReceiveFromRegister(regAddress, eotCB, commFailedCB, toRead, receiveBuffer)			\
+	(iic_ReceiveFromRegister (DMU_MODULE_NUMBER, regAddress, MPU_ADDRESS, eotCB, 				\
+			commFailedCB, toRead, receiveBuffer) )
+
+#define dmu_ReceiveSamples(commFailedCB, toRead, receiveBuffer)												\
+	(iic_ReceiveFromRegister (DMU_MODULE_NUMBER, ADD_ACCEL_OUT, MPU_ADDRESS, dmu_SamplesReady, 				\
 			commFailedCB, toRead, receiveBuffer) )
 
 
@@ -227,17 +231,9 @@ void dmu_InitFailed()
 void dmu_GetMeasurements()
 {
 	dmu_data.status = DMU_BUSY;
-	dmu_ReceiveFromRegister(ADD_ACCEL_OUT, dmu_CommFailed, sizeof(dmu_data._frame_buffer), (uint8_t*)dmu_data._frame_buffer);
+	dmu_ReceiveSamples(dmu_CommFailed, sizeof(dmu_data._frame_buffer), (uint8_t*)dmu_data._frame_buffer);
 	return;
 }
-/*
-void dmu_PrintFormattedMeasurements(void)
-{
-	struct dmu_measurements_T* dm = &dmu_measurements;
-	UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dm->accel.x, dm->accel.y, dm->accel.z, dm->gyro.x, dm->gyro.y, dm->gyro.z);
-	return;
-}
-*/
 
 void dmu_SamplesReady(void)
 {
@@ -257,6 +253,20 @@ void dmu_SamplesPending(void)
 	{
 		GPIOIntTypeSet(DMU_INT_PORT, DMU_INT_PIN, GPIO_RISING_EDGE);
 	}
+}
+
+void dmu_PrintRawMeasurements(struct dmu_samples_T* dmuSamples)
+{
+	UARTprintf("%d %d %d %d %d %d, ", dmuSamples->accel.x.v, dmuSamples->accel.y.v,
+				dmuSamples->accel.z.v, dmuSamples->gyro.x.v, dmuSamples->gyro.y.v, dmuSamples->gyro.z.v);
+	return;
+}
+
+void dmu_PrintFormattedMeasurements(struct dmu_samples_T* dmuSamples)
+{
+	UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dmuSamples->accel.x.v, dmuSamples->accel.y.v,
+				dmuSamples->accel.z.v, dmuSamples->gyro.x.v, dmuSamples->gyro.y.v, dmuSamples->gyro.z.v);
+	return;
 }
 
 void dmu_CommFailed(void)
