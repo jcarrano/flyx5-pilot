@@ -33,7 +33,7 @@ void att_ctrl_init(struct att_ctrl_state *state, struct att_ctrl_params *params)
 
 	state->att_prev = quat_Unit;
 	state->error_sat_prev = vec3_Zero;
-	state->integral_out_prev = vec3_Zero;
+	state->integral_out_prev = evec3_Zero;
 	state->integral_enabled = false;
 }
 
@@ -52,19 +52,19 @@ vec3 att_ctrl_step(struct att_ctrl_state *state, quat setpoint, quat att,
 	evec3 integral_out;
 
 	if (!state->integral_enabled) {
-		integral_out = vec3_Zero;
+		integral_out = evec3_Zero;
 	} else {
 		/* Integrate with the trapezium rule */
-		integral_out = dvsum(dvsum(
-			v_to_ev(error_sat_prev), v_to_ev(error_sat)),
-							integral_out_prev);
+		integral_out = ev_add(ev_add(
+			v_to_ev(state->error_sat_prev), v_to_ev(error_sat)),
+						state->integral_out_prev);
 	}
 
 	state->integral_out_prev = integral_out;
 	state->error_sat_prev = error_sat;
 
 	/* Disable the integral in the z direction as we do not have a magnetometer */
-	integral_out.z = 0;
+	integral_out.z = EFZero;
 
 	ctrl_signal = 	ev_add(
 			    ev_sub(
@@ -107,10 +107,10 @@ frac gammainv(frac T, frac t1, frac t2, frac t3)
 
 void control_mixer4(frac thrust, vec3 torque, frac motor_thrusts[4])
 {
-	motor_thrusts[0] = gammainv(thrust, 0,         torque.y,  -torque.z);
-	motor_thrusts[1] = gammainv(thrust, -torque.x, 0,         torque.z);
-	motor_thrusts[2] = gammainv(thrust, 0,         -torque.y, -torque.z);
-	motor_thrusts[3] = gammainv(thrust, torque.x,  0,         torque.z);
+	motor_thrusts[0] = gammainv(thrust, FZero,           torque.y,        f_neg(torque.z));
+	motor_thrusts[1] = gammainv(thrust, f_neg(torque.x), FZero,           torque.z);
+	motor_thrusts[2] = gammainv(thrust, FZero,           f_neg(torque.y), f_neg(torque.z));
+	motor_thrusts[3] = gammainv(thrust, torque.x,        FZero,           torque.z);
 
 	return;
 }
