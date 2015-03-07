@@ -41,6 +41,8 @@ struct dmu_data_T
 	uint8_t stage;
 
 	volatile DMU_STATUS status;
+	volatile bool samples_ready;
+	volatile bool samples_pending;
 
 	uint8_t _frame_buffer[DMU_FRAME_N_ELEM][DMU_SAMPLE_BYTES];
 };
