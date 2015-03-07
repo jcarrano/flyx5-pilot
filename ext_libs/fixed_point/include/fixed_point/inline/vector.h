@@ -40,6 +40,16 @@ MAKE_VEC_VEC_F(v_add, vec3, f_add)
 MAKE_VEC_VEC_F(v_sub, vec3, f_sub)
 
 /**
+ * Add two extended precision vectors.
+ */
+MAKE_VEC_VEC_F(ev_add, evec3, ef_add)
+
+/**
+ * Substract two extended precision vectors.
+ */
+MAKE_VEC_VEC_F(ev_sub, evec3, ef_sub)
+
+/**
  * Add two double precision vectors.
  */
 MAKE_VEC_VEC_F(dv_add, dvec3, df_add)
@@ -53,6 +63,12 @@ MAKE_VEC_VEC_F(dv_addsat, dvec3, df_addsat)
  * Substract two double precision vectors.
  */
 MAKE_VEC_VEC_F(dv_sub, dvec3, df_sub)
+
+/**
+ * Element-by-element mutiplication of a single precision vector by mixed
+ * precision, yieding extended precision.
+ */
+MAKE_VEC_VEC_F3(v_mvmul_ev, evec3, vec3, mvec3, f_mf_mul_ef)
 
 /**
  * Multiply vector by integer having the same width as frac.
@@ -80,6 +96,11 @@ MAKE_VEC_SCALAR_F(v_idiv, vec3, int16_t, f_idiv)
 MAKE_VEC_SCALAR_F(dv_idiv, dvec3, int16_t, df_idiv)
 
 /**
+ * Divide extended precision vector by integer having the same width as frac.
+ */
+MAKE_VEC_SCALAR_F(ev_idiv, evec3, int16_t, ef_idiv)
+
+/**
  * Arithmetic shift components left.
  */
 MAKE_VEC_SCALAR_F(dv_shiftl, dvec3, int8_t, df_shiftl)
@@ -88,6 +109,11 @@ MAKE_VEC_SCALAR_F(dv_shiftl, dvec3, int8_t, df_shiftl)
  * Arithmetic shift components right.
  */
 MAKE_VEC_SCALAR_F(dv_shiftr, dvec3, int8_t, df_shiftr)
+
+/**
+ * Clip components between -b and b.
+ */
+MAKE_VEC_SCALAR_F(v_clip, vec3, frac, f_clip)
 
 /**
  * Multiply single precicion vector by integer, yield extended precision vector.
@@ -108,6 +134,11 @@ MAKE_VEC_SCALAR_F2(v_fmul, vec3, vec3, frac, f_mul)
  * Multiply a single precision vector by a fractional, yield double precision.
  */
 MAKE_VEC_SCALAR_F2(v_fmul_dv, dvec3, vec3, frac, f_mul_df)
+
+/**
+ * Multiply a single precision vector by a mixed fractional, yield extended precision.
+ */
+MAKE_VEC_SCALAR_F2(v_mfmul_ev, evec3, vec3, mfrac, f_mf_mul_ef)
 
 /**
  * Clip an extended precision vector to the range of a single precision.
@@ -131,6 +162,7 @@ MAKE_VEC_ELEM_F(v_to_dv, dvec3, vec3, f_to_df)
  * @bug		Does not perform convergent rounding.
  */
 MAKE_VEC_ELEM_F(dv_to_v, vec3, dvec3, df_to_f)
+
 
 /** @}
  */
