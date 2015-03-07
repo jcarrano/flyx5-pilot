@@ -98,7 +98,7 @@ void nlcf_reset_correction(struct nlcf_state *state);
  *
  * @param	mes0	Attitude measurement taken when the body is not tilted.
  * @param	mes0	Attitude measurement taken when the body is tilted 90
- * 			degrees along the x axis.
+ * 			degrees along the xy axis (ie. around [1,1,0]).
  *
  * @return	Calibration output. Consist of a calibration quality, and a
  * 		correction parameter. The calibration quality is dependent of
