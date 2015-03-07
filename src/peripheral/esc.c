@@ -80,7 +80,7 @@ void esc_InitTimers(void)
 	TimerEnable(ESC_TIMER(3), TIMER_A_OR_B(3));
 }
 
-// chx is read as a percentage, with the maximum being 0xFFFF
+
 void esc_SetValues(uint32_t ch0, uint32_t ch1, uint32_t ch2, uint32_t ch3)
 {
 	TimerMatchSet(ESC_TIMER(0), TIMER_A_OR_B(0), ESC_VALUE(ch0));

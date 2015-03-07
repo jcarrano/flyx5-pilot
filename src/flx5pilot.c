@@ -11,10 +11,22 @@
 #include "inc/hw_memmap.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/uart.h"
+#include "xdriver/rti.h"
+
 #include "flyx5_hw.h"
 #include "hw_init.h"
 
+#include "debug_tools/stdio_simple.h"
+#include "Misc/error.h"
+
 #include "peripheral/buzzer.h"
+#include "peripheral/dmu_simple.h"
+#include "peripheral/joystick.h"
+#include "peripheral/usound.h"
+
+#include "control/nlcf.h"
+
+#include "quad_setup.h"
 
 /**
  * This error routine that is called if the driver library encounters an error.
@@ -26,65 +38,79 @@ void __error__(char *filename, uint32_t line)
 }
 #endif
 
-/**
- * Send a string to the UART, blocks execution until done.
- *
- * String must be null terminated.
- */
-void UARTStringPut(uint32_t ui32Base, const char *s)
-{
-    char c;
 
-    while((c = *s) != '\0') {
-        R_(UARTCharPut)(ui32Base, c);
-        s++;
-    }
+#include "utils/uartstdio.h"
+void
+ConfigureUART2(void)
+{
+    //
+    // Enable the GPIO Peripheral used by the UART.
+    //
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+
+    //
+    // Enable UART0
+    //
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
+
+    //
+    // Configure GPIO Pins for UART mode.
+    //
+    GPIOPinConfigure(GPIO_PA0_U0RX);
+    GPIOPinConfigure(GPIO_PA1_U0TX);
+    GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+
+    //
+    // Use the internal 16MHz oscillator as the UART clock source.
+    //
+    UARTClockSourceSet(UART0_BASE, UART_CLOCK_PIOSC);
+
+    //
+    // Initialize the UART for console I/O.
+    //
+    UARTStdioConfig(0, 115200, 16000000);
 }
 
-/**
- * Convert int to string and send to UART, blocks execution until done.
- */
-void UARTIntPut(uint32_t ui32Base, int x)
+
+void init_peripherals();
+
+int main(void)
 {
-#define INT_MAX_S_LEN 32
-    char s[INT_MAX_S_LEN];
-    int i = INT_MAX_S_LEN-2;
+    struct dmu_samples_T dmuSamples;
+    struct nlcf_state state;
+    bool esc_calibration_mode = false;
 
-    s[INT_MAX_S_LEN-1] = 0;
-
-    while (x) {
-        s[i--] = x%10 + '0';
-        x = x/10;
-    }
-
-    UARTStringPut(ui32Base, s + i + 1);
-}
-
-int main_carry(void)
-{
     init_failsafe();
 
     init_clock();
 
     //init_pins();
     /* Initialise all ports */
-    init_all_gpio();
-
+    //init_all_gpio();
+/*
     if (!running_under_debugger()) {
-            SysCtlDelay(10000000);
+            //SysCtlDelay(10000000);
             init_jtag_muxed_pins();
     }
+*/
+
 
     /* Initialize port */
-    ENABLE_AND_RESET(UART_DEBUG);
-//    CFG_PIN(DEBUG_RX);
-//    CFG_PIN(DEBUG_TX);
+    //ENABLE_AND_RESET(UART_DEBUG);
 
+
+
+    //CFG_PIN(DEBUG_RX);
+    //CFG_PIN(DEBUG_TX);
+/*
     R_(UARTConfigSetExpClk)(BASE_PERIPH(UART_DEBUG) , R_(SysCtlClockGet)(), 115200,
                             (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
                              UART_CONFIG_PAR_NONE));
+*/
+    ConfigureUART2();
 
-#define HELLO_TXT "Hello, nigga!\r\n"
+
+#define HELLO_TXT "This is FLYX5!\r\n"
     UARTStringPut(BASE_PERIPH(UART_DEBUG), HELLO_TXT);
 #define CLK_TXT "Clock speed is: "
 #define ENDL "\r\n"
@@ -92,24 +118,42 @@ int main_carry(void)
     UARTIntPut(BASE_PERIPH(UART_DEBUG), R_(SysCtlClockGet)());
     UARTStringPut(BASE_PERIPH(UART_DEBUG), ENDL);
 
-    buzzer_init();
+    //buzzer_play_note(16667, 16667/2);
 
-    buzzer_play_note(16667, 16667/2);
+    init_peripherals();
+
+    nlcf_init(&state);
+
 
     //
     // Loop forever.
     //
+    bool calibrationMode = false;
+
     while(1)
     {
-        int c = R_(UARTCharGet)(BASE_PERIPH(UART_DEBUG));
-        c = (c <= 'z' && c >= 'a')? c - 'a' + 'A' : c;
-        R_(UARTCharPut)(BASE_PERIPH(UART_DEBUG), c);
 
-        buzzer_play_note(16667, (16667/4)*3);
+    	if(dmu_PumpEvents(&dmuSamples))
+    	{
+			nlcf_process(&state, dmuSamples.gyro, dmuSamples.accel, NULL);
 
-        c = R_(UARTCharGet)(BASE_PERIPH(UART_DEBUG));
-        R_(UARTCharPut)(BASE_PERIPH(UART_DEBUG), c);
+			calibrationMode = qset_TryDmuCalibration(calibrationMode, &state);
+			//quat q_est = dq_to_q(state.q);
+    	}
 
-        buzzer_play_note(16667, 16667/2);
     }
+
 }
+
+void init_peripherals()
+{
+    //buzzer_init();
+    dmu_Init();
+    //joy_Init();
+    //usound_Init();
+
+    rti_Init();
+	err_Init(NULL, _puts, NULL);
+}
+
+

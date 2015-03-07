@@ -38,6 +38,7 @@ void dmu_Init()
 	iic_Init(DMU_MODULE_NUMBER);
 	gpio_Init(DMU_INT_PORT_NUM, DMU_INT_PIN, GPIO_RISING_EDGE);
 
+	_puts("stages start");
 	dmu_StagesInit();
 
 	while (dmu_data.init == false)
@@ -138,11 +139,13 @@ void dmu_StagesInit()
 	case 1:
 
 		dmu_commDataPtr->data[0] = ADD_PWR_MGMT_1;
-		dmu_commDataPtr->data[1] = 0;
+		dmu_commDataPtr->data[1] = 0x01;
 
 		dmu_Send (dmu_StagesInit, dmu_InitFailed, 2, NULL);
 
 		dmu_data.stage++;
+
+		//Putchar('1');
 
 		break;
 
@@ -166,6 +169,8 @@ void dmu_StagesInit()
 
 		dmu_data.stage++;
 
+		//Putchar('2');
+
 		break;
 
 	case 3:
@@ -178,6 +183,8 @@ void dmu_StagesInit()
 		dmu_Send(dmu_StagesInit, dmu_InitFailed, 3, NULL);
 
 		dmu_data.stage++;
+
+		//Putchar('3');
 
 		break;
 
@@ -194,6 +201,8 @@ void dmu_StagesInit()
 
 		dmu_data.stage++;
 
+		//Putchar('4');
+
 		break;
 
 	case 5:
@@ -205,6 +214,8 @@ void dmu_StagesInit()
 
 		dmu_data.stage++;
 
+		//Putchar('5');
+
 		break;
 
 
@@ -214,6 +225,8 @@ void dmu_StagesInit()
 		dmu_commDataPtr->data[1] = USER_CTRL(DMP_DISABLE, FIFO_MASTER_DISABLE, FIFO_RESET, SIGNAL_PATH_RESET);
 		dmu_Send(dmu_StagesInit, dmu_InitFailed, 2, NULL);
 		dmu_data.stage++;
+
+		//Putchar('6');
 
 		break;
 

@@ -8,11 +8,14 @@
 #ifndef STDIO_SIMPLE_H_
 #define STDIO_SIMPLE_H_
 
-#include "inc/hw_memmap.h"
+#include <stdint.h>
 
-#define UART_MODULE_BASE UART0_BASE
 
-void _puts(char* str);
+void UARTStringPut(uint32_t ui32Base, const char *s);
 
+//! Wrapper for UARTStringPut, directing output to UART_DEBUG defined in flyx5_hw.
+void _puts(const char *s);
+
+void UARTIntPut(uint32_t ui32Base, int x);
 
 #endif /* STDIO_SIMPLE_H_ */

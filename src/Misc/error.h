@@ -10,7 +10,7 @@
 
 
 typedef void (*err_action)(void);
-typedef void (*err_print)(char* errMsg);
+typedef void (*err_print)(const char* errMsg);
 
 void err_Init(err_action emergency, err_print printMsg, err_action steady);
 
