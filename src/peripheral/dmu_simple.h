@@ -59,4 +59,6 @@ bool dmu_PumpEvents(struct dmu_samples_T* samplesPtr);
 
 void dmu_GetMeasurements(void);
 
+void dmu_PrintRawMeasurements(struct dmu_samples_T* dmuSamples);
+
 #endif 	// _DMUSIMPLE_H_INCLUDED_
