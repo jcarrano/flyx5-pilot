@@ -54,6 +54,14 @@ extern void gpioA_InterruptHandler(void);
 extern void gpioE_InterruptHandler(void);
 extern void _puts(char*);
 
+extern void Joystick_ROLL_ISR(void);	// Wide Timer 0 subtimer A
+extern void Joystick_PITCH_ISR(void);   // Wide Timer 0 subtimer B
+extern void Joystick_YAW_ISR(void);     // Wide Timer 1 subtimer A
+extern void Joystick_ELEV_ISR(void);    // Wide Timer 1 subtimer B
+extern void rti_Service(void);
+
+extern void Usound_TRIGGER_ISR(void);   // Timer 1 subtimer A
+extern void Usound_ECHO_ISR(void);    	// Timer 1 subtimer B
 
 //*****************************************************************************
 //
@@ -104,12 +112,12 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // Debug monitor handler
     0,                                      // Reserved
     IntDefaultHandler,                      // The PendSV handler
-    IntDefaultHandler,                      // The SysTick handler
+    rti_Service,                     	 	// The SysTick handler
     gpioA_InterruptHandler,                 // GPIO Port A
     IntDefaultHandler,                      // GPIO Port B
     IntDefaultHandler,                      // GPIO Port C
     IntDefaultHandler,                      // GPIO Port D
-    gpioE_InterruptHandler,                      // GPIO Port E
+    gpioE_InterruptHandler,              	// GPIO Port E
     IntDefaultHandler,                      // UART0 Rx and Tx
     IntDefaultHandler,                      // UART1 Rx and Tx
     IntDefaultHandler,                      // SSI0 Rx and Tx
@@ -126,8 +134,8 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // Watchdog timer
     IntDefaultHandler,                      // Timer 0 subtimer A
     IntDefaultHandler,                      // Timer 0 subtimer B
-    IntDefaultHandler,                      // Timer 1 subtimer A
-    IntDefaultHandler,                      // Timer 1 subtimer B
+    Usound_TRIGGER_ISR,                     // Timer 1 subtimer A
+    Usound_ECHO_ISR,                      	// Timer 1 subtimer B
     IntDefaultHandler,                      // Timer 2 subtimer A
     IntDefaultHandler,                      // Timer 2 subtimer B
     IntDefaultHandler,                      // Analog Comparator 0
@@ -142,7 +150,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // SSI1 Rx and Tx
     IntDefaultHandler,                      // Timer 3 subtimer A
     IntDefaultHandler,                      // Timer 3 subtimer B
-    iic1_InterruptHandler,                      // I2C1 Master and Slave
+    iic1_InterruptHandler,           	    // I2C1 Master and Slave
     IntDefaultHandler,                      // Quadrature Encoder 1
     IntDefaultHandler,                      // CAN0
     IntDefaultHandler,                      // CAN1
@@ -199,10 +207,10 @@ void (* const g_pfnVectors[])(void) =
     0,                                      // Reserved
     IntDefaultHandler,                      // Timer 5 subtimer A
     IntDefaultHandler,                      // Timer 5 subtimer B
-    IntDefaultHandler,                      // Wide Timer 0 subtimer A
-    IntDefaultHandler,                      // Wide Timer 0 subtimer B
-    IntDefaultHandler,                      // Wide Timer 1 subtimer A
-    IntDefaultHandler,                      // Wide Timer 1 subtimer B
+    Joystick_ROLL_ISR,                      // Wide Timer 0 subtimer A
+    Joystick_PITCH_ISR,                      // Wide Timer 0 subtimer B
+    Joystick_YAW_ISR,                      // Wide Timer 1 subtimer A
+    Joystick_ELEV_ISR,                      // Wide Timer 1 subtimer B
     IntDefaultHandler,                      // Wide Timer 2 subtimer A
     IntDefaultHandler,                      // Wide Timer 2 subtimer B
     IntDefaultHandler,                      // Wide Timer 3 subtimer A
