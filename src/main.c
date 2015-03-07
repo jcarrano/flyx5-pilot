@@ -79,7 +79,7 @@ __error__(char *pcFilename, uint32_t ui32Line)
 
 void main_Init(void);
 void ConfigureUART(void);
-
+void main_SetupCalibration(struct nlcf_state* statePtr);
 
 void readSuccess(void);
 void readFail(void);
@@ -116,6 +116,8 @@ int main(void)
 
     nlcf_init(&state);
 
+    main_SetupCalibration(&state);
+
     _puts("init done\n\r");
 
 
@@ -124,19 +126,23 @@ int main(void)
 
     	if(dmu_PumpEvents(&dmuSamples))
     	{
-    		/*
-		UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dmuSamples.accel.x.v, dmuSamples.accel.y.v,
-    					dmuSamples.accel.z.v, dmuSamples.gyro.x.v, dmuSamples.gyro.y.v, dmuSamples.gyro.z.v);
-		*/
-		nlcf_process(&state, dmuSamples.gyro, dmuSamples.accel, NULL);
+				/*
+			UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dmuSamples.accel.x.v, dmuSamples.accel.y.v,
+							dmuSamples.accel.z.v, dmuSamples.gyro.x.v, dmuSamples.gyro.y.v, dmuSamples.gyro.z.v);
+			*/
+			nlcf_process(&state, dmuSamples.gyro, dmuSamples.accel, NULL);
 
-		quat q_est = dq_to_q(state.q);
+			quat q_est = dq_to_q(state.q);
 
-		_puts("\x0E\x0C");
-		UARTputraw16(q_est.r.v);
-		UARTputraw16(q_est.v.x.v);
-		UARTputraw16(q_est.v.y.v);
-		UARTputraw16(q_est.v.z.v);
+			_puts("\x0E\x0C");
+			UARTputraw16(q_est.r.v);
+			UARTputraw16(q_est.v.x.v);
+			UARTputraw16(q_est.v.y.v);
+			UARTputraw16(q_est.v.z.v);
+
+
+			//UARTprintf("%d %d %d %d, ", q_est.r.v, q_est.v.x.v, q_est.v.y.v, q_est.v.z.v);
+			//dmu_PrintRawMeasurements(&dmuSamples);
     	}
 
     }
@@ -165,10 +171,10 @@ void main_Init()
                        SYSCTL_OSC_MAIN);
 
     //
-    // Enable the GPIO port that is used for the on-board LED.
+    // Enable the GPIO port that is used for the on-board LED / Button.
     //
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+    SysCtlPeripheralEnable(SYS_PERIPH(GPIOF));
+    SysCtlPeripheralEnable(SYS_PERIPH(GPIOE));
 
     //led_Init();
     //led_Off();
@@ -178,6 +184,9 @@ void main_Init()
     //
     ConfigureUART();
 
+    CFG_PIN(BUTTON_2);	// For calibration purposes
+	R_(GPIOPadConfigSet)(PORT_OF(BUTTON_2),
+		BIT(PIN_N(BUTTON_2)), GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
     //
     // Hello!
     //
@@ -225,6 +234,93 @@ ConfigureUART(void)
     // Initialize the UART for console I/O.
     //
     UARTStdioConfig(0, 115200, 16000000);
+}
+
+void main_SetupCalibration(struct nlcf_state* statePtr)
+{
+	struct dmu_samples_T dmuSamples;
+
+	if (!PIN_ACTIVE(BUTTON_2))
+	{
+		return;
+	}
+
+	_puts("Entered calibration mode. Release button to start calibration.\n\r");
+
+	while(PIN_ACTIVE(BUTTON_2))
+		;
+
+	_puts("Press BTN2 to trigger measures.");
+
+	uint8_t measurementCount = 0;
+
+	while (measurementCount < 2)
+	{
+		struct cal_output calibrationOutput;
+		quat calibration[2];
+
+    	if(dmu_PumpEvents(&dmuSamples))
+    	{
+			nlcf_process(statePtr, dmuSamples.gyro, dmuSamples.accel, NULL);
+    	}
+
+		if(!PIN_ACTIVE(BUTTON_2))
+		{
+			continue;
+		}
+		/*
+		if (userInput == 'c')
+		{
+			quat aux;
+			asm sei;
+			aux = controlData.QEst;
+			asm cli;
+			printf("Current quaternion: %d %d %d %d\n", Q_COMPONENTS(aux));
+			continue;
+		}
+
+		if (userInput != 'm')
+			continue;
+*/
+		if (measurementCount == 0)
+		{
+			calibration[0] = dq_to_q(statePtr->q);			// state is not written during interrupts, no need of "cli"
+			_puts("First measurement done\n\r");
+		}
+
+		else if (measurementCount == 1)
+		{
+			calibration[1] = dq_to_q(statePtr->q);
+			_puts("Second measurement done\n\r");
+		}
+
+		measurementCount++;
+
+		if (measurementCount == 2)
+		{
+			calibrationOutput = att_calibrate(calibration[0], calibration[1]);
+			UARTprintf("Cal output: %d\n\r", calibrationOutput.quality);
+			UARTprintf("Correction: %d %d %d %d\n\r", calibrationOutput.correction.r.v, calibrationOutput.correction.v.x.v,
+					calibrationOutput.correction.v.y.v, calibrationOutput.correction.v.z.v);
+
+			if (calibrationOutput.quality == CAL_BAD)
+			{
+				measurementCount = 1;	// Stay looping second measurement.
+				_puts("Calibrate again\n\r");
+			}
+
+			nlcf_apply_correction(statePtr, calibrationOutput);
+		}
+
+		SysCtlDelay(SysCtlClockGet() / 3 / 3);		// Delay for relasing button.
+	}
+
+	_puts("Press BTN2 to continue.");
+
+	while(!PIN_ACTIVE(BUTTON_2))
+		;
+
+	return;
 }
 
 void readSuccess(void)

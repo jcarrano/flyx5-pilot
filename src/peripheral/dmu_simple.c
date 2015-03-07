@@ -24,6 +24,8 @@ void dmu_SamplesReady(void);
 	(iic_ReceiveFromRegister (DMU_MODULE_NUMBER, ADD_ACCEL_OUT, MPU_ADDRESS, dmu_SamplesReady, 				\
 			commFailedCB, toRead, receiveBuffer) )
 
+volatile bool samples_ready = false;
+volatile bool samples_pending = false;
 
 void dmu_Init()
 {
@@ -32,6 +34,9 @@ void dmu_Init()
 
 	if (dmu_data.init == true)
 		return;
+
+	dmu_data.stage = 0;
+	dmu_data.status = DMU_IDLE;
 
 	iic_Init(DMU_MODULE_NUMBER);
 	gpio_Init(DMU_INT_PORT_NUM, DMU_INT_PIN, GPIO_RISING_EDGE);
@@ -74,9 +79,22 @@ bool dmu_PumpEvents(struct dmu_samples_T* samplesPtr)
 {
 	bool samplesReady = false;
 
-	DMU_STATUS dmuStatus = dmu_data.status;	// One read only
+	if (samples_ready == true)
+	{
+		samples_ready = false;
+		dmu_data.status = DMU_SAMPLES_READY;
+	}
 
-	switch (dmuStatus)
+	if (samples_pending == true)
+	{
+		samples_pending = false;
+		if (dmu_data.status == DMU_IDLE)
+		{
+			dmu_data.status = DMU_SAMPLES_PENDING;
+		}
+	}
+
+	switch (dmu_data.status)
 	{
 		case DMU_SAMPLES_PENDING:
 			dmu_GetMeasurements();
@@ -237,7 +255,8 @@ void dmu_GetMeasurements()
 
 void dmu_SamplesReady(void)
 {
-	dmu_data.status = DMU_SAMPLES_READY;
+	//dmu_data.status = DMU_SAMPLES_READY;
+	samples_ready = true;
 	return;
 }
 
@@ -247,7 +266,8 @@ void dmu_SamplesPending(void)
 	if (a == GPIO_RISING_EDGE)
 	{
 		GPIOIntTypeSet(DMU_INT_PORT, DMU_INT_PIN, GPIO_FALLING_EDGE);
-		dmu_data.status = DMU_SAMPLES_PENDING;
+		//dmu_data.status = DMU_SAMPLES_PENDING;
+		samples_pending = true;
 	}
 	else
 	{
