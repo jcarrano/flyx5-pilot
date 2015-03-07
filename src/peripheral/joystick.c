@@ -1,6 +1,7 @@
 #include "joystick.h"
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "driverlib/sysctl.h"
 #include "driverlib/timer.h"
@@ -11,7 +12,11 @@
 #include "inc/hw_memmap.h"
 #include "inc/hw_ints.h"
 
+#include "../xdriver/rti.h"
+
 // Calibration
+//#define JOY_CALIB // This causes the raw values (which should then be inserted into the calibration defines) to be outputted
+
 #define S_MAX (32767)
 #define S_MIN (-32768)
 #define U_MAX S_MAX
@@ -25,23 +30,23 @@
 #define SATURATE_S(x) ((x > S_MAX) ? S_MAX : ((x < S_MIN) ? S_MIN : x))
 #define INVERT_S(x, inverted) ((inverted != 0) ? (-x) : (x))
 
-#define YAW_MIN (54000)
-#define YAW_MAX (96000)
-#define YAW_REST (75000)
+#define YAW_MIN (89000)
+#define YAW_MAX (152000)
+#define YAW_REST (120000)
 #define YAW_INVERTED 1
 
-#define PITCH_MIN (51000)
-#define PITCH_MAX (96000)
-#define PITCH_REST (73000)
+#define PITCH_MIN (88000)
+#define PITCH_MAX (152000)
+#define PITCH_REST (120000)
 #define PITCH_INVERTED 0
 
-#define ROLL_MIN (53000)
-#define ROLL_MAX (99000)
-#define ROLL_REST (75000)
+#define ROLL_MIN (89000)
+#define ROLL_MAX (152000)
+#define ROLL_REST (120000)
 #define ROLL_INVERTED 1
 
-#define ELEV_MIN (67000)
-#define ELEV_MAX (105000)
+#define ELEV_MIN (88000)
+#define ELEV_MAX (153000)
 
 #define JOYSTICK_GPIO_PORT_BASE GPIO_PORTC_BASE
 
@@ -63,12 +68,15 @@
 #define ELEV_IDX 3
 
 volatile joy_data_t joy_data;
+volatile bool joy_no_signal;
 
 typedef struct
 {
 	int32_t last_meas;
 	bool rising;
 	int32_t raw_meas;
+
+	bool measured;
 } joy_internal_data_t;
 
 joy_internal_data_t joy_internal_data[4];
@@ -77,9 +85,28 @@ uint32_t PinConfigurationForPortPin(uint8_t pin);
 void InitTimers(void);
 void Joystick_ISR_Handler(uint8_t axis_pin, uint8_t axis_idx);
 
-void InitJoystick(void)
+void Joystick_CheckSignal (void *data, rti_time period, rti_id id);
+
+void joy_Init(void)
 {
+	joy_no_signal = true;
+
+	joy_data.elev = 0;
+	joy_data.roll = 0;
+	joy_data.pitch = 0;
+	joy_data.yaw = 0;
+
+	rti_Init();
+
+	int i;
+	for (i = 0; i < 4; i++)
+	{
+		joy_internal_data[i].measured = false;
+	}
+
 	InitTimers();
+
+	rti_Register(Joystick_CheckSignal, NULL, RTI_MS_TO_TICKS(200), RTI_NOW);
 }
 
 void InitTimers(void)
@@ -197,37 +224,82 @@ void Joystick_ISR_Handler(uint8_t axis_pin, uint8_t axis_idx)
 	else
 	{
 		joy_internal_data[axis_idx].raw_meas = TimerValueGet(TIMER_BASE(axis_pin), TIMER_A_OR_B(axis_pin)) - joy_internal_data[axis_idx].last_meas;
-		int32_t scaled_meas = joy_internal_data[axis_idx].raw_meas;
+		int32_t raw_meas = joy_internal_data[axis_idx].raw_meas;
 
 		if (axis_idx == ROLL_IDX)
 		{
-			scaled_meas = LINEAR_SCALE_S(scaled_meas, ROLL_MIN, ROLL_MAX, ROLL_REST);
+			int32_t scaled_meas = LINEAR_SCALE_S(raw_meas, ROLL_MIN, ROLL_MAX, ROLL_REST);
 			scaled_meas = SATURATE_S(scaled_meas);
+#ifdef JOY_CALIB
+			joy_data.roll = raw_meas;
+#else
 			joy_data.roll = INVERT_S(scaled_meas, ROLL_INVERTED);
+#endif
+
 		}
 		else if (axis_idx == PITCH_IDX)
 		{
 
-			scaled_meas = LINEAR_SCALE_S(scaled_meas, PITCH_MIN, PITCH_MAX, PITCH_REST);
+			int32_t scaled_meas = LINEAR_SCALE_S(raw_meas, PITCH_MIN, PITCH_MAX, PITCH_REST);
 			scaled_meas = SATURATE_S(scaled_meas);
+#ifdef JOY_CALIB
+			joy_data.pitch = raw_meas;
+#else
 			joy_data.pitch = INVERT_S(scaled_meas, PITCH_INVERTED);
+#endif
 		}
 		else if (axis_idx == YAW_IDX)
 		{
-			scaled_meas = LINEAR_SCALE_S(scaled_meas, YAW_MIN, YAW_MAX, YAW_REST);
+			int32_t scaled_meas = LINEAR_SCALE_S(raw_meas, YAW_MIN, YAW_MAX, YAW_REST);
 			scaled_meas = SATURATE_S(scaled_meas);
+#ifdef JOY_CALIB
+			joy_data.yaw = raw_meas;
+#else
 			joy_data.yaw = INVERT_S(scaled_meas, YAW_INVERTED);
+#endif
 		}
 		else
 		{
-			scaled_meas = LINEAR_SCALE_U(scaled_meas, ELEV_MIN, ELEV_MAX);
+			int32_t scaled_meas = LINEAR_SCALE_U(raw_meas, ELEV_MIN, ELEV_MAX);
+#ifdef JOY_CALIB
+			joy_data.elev = raw_meas;
+#else
 			joy_data.elev = SATURATE_U(scaled_meas);
+#endif
 		}
 
+		joy_internal_data[axis_idx].measured = true;
 		joy_internal_data[axis_idx].rising = true;
 		TimerControlEvent(TIMER_BASE(axis_pin), TIMER_A_OR_B(axis_pin), TIMER_EVENT_POS_EDGE);
 	}
 
 	while ((TimerIntStatus(TIMER_BASE(axis_pin), false) & TIMER_CAP_EVENT(TIMER_A_OR_B(axis_pin))) != 0)
 		;
+}
+
+void Joystick_CheckSignal (void *data, rti_time period, rti_id id)
+{
+	bool signal_loss_detected = false;
+
+	int i;
+	for (i = 0; i < 4; i++)
+	{
+		if (joy_internal_data[i].measured == false)
+		{
+			signal_loss_detected = true;
+		}
+		else
+		{
+			joy_internal_data[i].measured = false;
+		}
+	}
+
+	if (signal_loss_detected == true)
+	{
+		joy_no_signal = true;
+	}
+	else
+	{
+		joy_no_signal = false;
+	}
 }
