@@ -24,9 +24,6 @@ void dmu_SamplesReady(void);
 	(iic_ReceiveFromRegister (DMU_MODULE_NUMBER, ADD_ACCEL_OUT, MPU_ADDRESS, dmu_SamplesReady, 				\
 			commFailedCB, toRead, receiveBuffer) )
 
-volatile bool samples_ready = false;
-volatile bool samples_pending = false;
-
 void dmu_Init()
 {
 //	u16 offsetSampleRate;
@@ -79,15 +76,17 @@ bool dmu_PumpEvents(struct dmu_samples_T* samplesPtr)
 {
 	bool samplesReady = false;
 
-	if (samples_ready == true)
+	// To avoid race condition, interrupts shall not share variables with application.
+	// Furthermore, set pending state only if idle (NOT if busy, which will cause an error).
+	if (dmu_data.samples_ready == true)
 	{
-		samples_ready = false;
+		dmu_data.samples_ready = false;
 		dmu_data.status = DMU_SAMPLES_READY;
 	}
 
-	if (samples_pending == true)
+	if (dmu_data.samples_pending == true)
 	{
-		samples_pending = false;
+		dmu_data.samples_pending = false;
 		if (dmu_data.status == DMU_IDLE)
 		{
 			dmu_data.status = DMU_SAMPLES_PENDING;
@@ -255,8 +254,7 @@ void dmu_GetMeasurements()
 
 void dmu_SamplesReady(void)
 {
-	//dmu_data.status = DMU_SAMPLES_READY;
-	samples_ready = true;
+	dmu_data.samples_ready = true;
 	return;
 }
 
@@ -266,8 +264,7 @@ void dmu_SamplesPending(void)
 	if (a == GPIO_RISING_EDGE)
 	{
 		GPIOIntTypeSet(DMU_INT_PORT, DMU_INT_PIN, GPIO_FALLING_EDGE);
-		//dmu_data.status = DMU_SAMPLES_PENDING;
-		samples_pending = true;
+		dmu_data.samples_pending = true;
 	}
 	else
 	{

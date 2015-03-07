@@ -2,6 +2,7 @@
 #define JOYSTICK_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct
 {
@@ -13,6 +14,8 @@ typedef struct
 
 volatile extern joy_data_t joy_data;
 
-void InitJoystick(void);
+volatile extern bool joy_no_signal;
+
+void joy_Init(void);
 
 #endif /* JOYSTICK_H_ */
