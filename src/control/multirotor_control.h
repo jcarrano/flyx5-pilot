@@ -25,6 +25,7 @@
 #define MULTIROTOR_CONTROL_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <fixed_point/types.h>
 #include <fixed_point/vector_types.h>
 #include <fixed_point/quaternion_types.h>
