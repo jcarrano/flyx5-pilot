@@ -159,6 +159,13 @@ FXP_OP3(ef_add, efrac, +)
 /** Substract two extended precision fractional numbers - may overflow. */
 FXP_OP3(ef_sub, efrac, -)
 
+/** Add a single precision fractional to an extended precision fractional. */
+FXP_DECLARATION(efrac ef_f_add(efrac a, frac b))
+{
+	a.v += b.v
+	return a;
+}
+
 /** Negate single precision fractional */
 FXP_DECLARATION(frac f_neg(frac a))
 {
@@ -207,6 +214,20 @@ FXP_DECLARATION(frac f_mul(frac a, frac b))
 FXP_DECLARATION(dfrac f_mul_df(frac a, frac b))
 {
 	dfrac r = {(((dfrac_base)a.v) * b.v)};
+	return r;
+}
+
+/**
+ * Multiply single precision by mixed fractional, yield extended precision,
+ *
+ * 1.15 x 8.8 => 17.15
+ *
+ * @param	a,b	Operands
+ * @return		a*b
+ */
+FXP_DECLARATION(efrac f_mf_mul_ef(frac a, mfrac b))
+{
+	efrac r = {(((efrac_base)a.v) * b.v)>>8};
 	return r;
 }
 

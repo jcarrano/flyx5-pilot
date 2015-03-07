@@ -55,6 +55,12 @@ MAKE_VEC_VEC_F(dv_addsat, dvec3, df_addsat)
 MAKE_VEC_VEC_F(dv_sub, dvec3, df_sub)
 
 /**
+ * Element-by-element mutiplication of a single precision vector by mixed
+ * precision, yieding extended precision.
+ */
+MAKE_VEC_VEC_F3(v_mvmul_ev, evec3, vec3, mvec3, f_mf_mul_ef)
+
+/**
  * Multiply vector by integer having the same width as frac.
  */
 MAKE_VEC_SCALAR_F(v_imul, vec3, int16_t, f_imul)
@@ -90,6 +96,11 @@ MAKE_VEC_SCALAR_F(dv_shiftl, dvec3, int8_t, df_shiftl)
 MAKE_VEC_SCALAR_F(dv_shiftr, dvec3, int8_t, df_shiftr)
 
 /**
+ * Clip components between -b and b.
+ */
+MAKE_VEC_SCALAR_F(v_clip, vec3, frac, f_clip)
+
+/**
  * Multiply single precicion vector by integer, yield extended precision vector.
  */
 MAKE_VEC_SCALAR_F2(v_imul_ev, evec3, vec3, int, f_imul_ef)
@@ -108,6 +119,11 @@ MAKE_VEC_SCALAR_F2(v_fmul, vec3, vec3, frac, f_mul)
  * Multiply a single precision vector by a fractional, yield double precision.
  */
 MAKE_VEC_SCALAR_F2(v_fmul_dv, dvec3, vec3, frac, f_mul_df)
+
+/**
+ * Multiply a single precision vector by a mixed fractional, yield extended precision.
+ */
+MAKE_VEC_SCALAR_F2(v_mfmul_ev, evec3, vec3, mfrac, f_mf_mul_ef)
 
 /**
  * Clip an extended precision vector to the range of a single precision.
