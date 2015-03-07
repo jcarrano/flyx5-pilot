@@ -1,0 +1,4 @@
+source -v gdb_load.script
+b main
+c
+

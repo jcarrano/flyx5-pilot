@@ -1,0 +1,89 @@
+# Makefile for programming via OpenOCD
+#   by Juan I Carrano <juan@carrano.com.ar>
+#
+# Copyright (c) 2014, Juan Ignacio Carrano
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+# Get CPU information
+.PHONY: cpuinfo
+cpuinfo:
+	@echo GETTING_CPU_INFO
+	$(PROGRAM) cpuinfo
+
+# Open a debug connection with the MCU
+# depends on the elf file
+.PHONY: debug
+debug: $(OUT_FILE).elf
+	$(GDB) --batch --command=debug.gdb $(OUT_FILE).elf
+
+# Perform a flash erase
+.PHONY: erase
+erase:
+# The erase target should only be executed when program target is NOT given.
+ifeq ($(filter program,$(MAKECMDGOALS)),)
+	@echo ERASING
+	$(PROGRAM) erase $(FLASH:%=-f%)
+else
+	@:
+endif
+
+# Stop CPU execution
+.PHONY: halt
+halt:
+	@echo HALTING
+	$(PROGRAM) halt
+
+# Program MCU memory from ELF output file
+.PHONY: program
+program: $(OUT_FILE).elf
+	@echo PROGRAMMING
+	$(PROGRAM) program $(FLASH:%=-f%) $(PROG_CLOCK:%=-c%) -e --verify \
+		$(if $(findstring reset,$(MAKECMDGOALS)),-R) \
+		$(if $(findstring run,$(MAKECMDGOALS)),-r) \
+		-f "$(subst /,\,$(realpath $(OUT_FILE).elf))"
+
+# Reset MCU.
+.PHONY: reset
+reset:
+# The reset target should only be executed when run and program targets are NOT
+# given.
+ifeq ($(filter run program,$(MAKECMDGOALS)),)
+	@echo RESETTING
+	$(PROGRAM) reset
+else
+	@:
+endif
+
+# Start CPU execution
+#~ .PHONY: run
+#~ run:
+#~ # The run target should only be executed when the program target is NOT given.
+#~ ifeq ($(filter program,$(MAKECMDGOALS)),)
+	#~ @echo $(MSG_RUNNING)
+	#~ $(PROGRAM) run $(if $(findstring reset,$(MAKECMDGOALS)),-R)
+#~ else
+	#~ @:
+#~ endif
