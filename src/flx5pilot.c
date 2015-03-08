@@ -160,11 +160,11 @@ void esc_calibration()
 
 static bool joystick_check_arm(joy_data_t joy)
 {
-    const int32_t low_thres = (INT16_MIN / 10) * 9;
-    const uint32_t low_thres_u = (UINT16_MAX / 10) * 9;
+    const int32_t low_thres = (INT16_MIN / 20) * 19;
+    const uint32_t low_thres_u = (UINT16_MAX / 20);
 
-    return joy.roll < low_thres && joy.roll < low_thres &&
-            joy.pitch < low_thres && joy.elev < low_thres_u;
+    return joy.roll < low_thres && joy.pitch < low_thres &&
+            joy.yaw > -low_thres && joy.elev < low_thres_u;
 }
 
 program_mode idle_process()

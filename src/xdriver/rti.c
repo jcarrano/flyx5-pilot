@@ -19,6 +19,8 @@ typedef struct rti_cb {
 
 bool rti_isInit = false;
 
+volatile rti_time Time_Counter;
+
 struct rti_cb rti_tbl[RTI_MAX_FCNS];
 
 void rti_Init()
@@ -27,6 +29,7 @@ void rti_Init()
 		return;
 	
 	rti_isInit = true;
+	Time_Counter = 0;
 	
 	rti_id i;
 	for (i = 0; i < RTI_MAX_FCNS; i++)
@@ -90,10 +93,10 @@ void rti_Cancel(rti_id id)
 	rti_tbl[id].callback = NULL;
 }
 
-
 void rti_Service(void)
 {
 	// The SYSTICK interrupt is cleared automatically
+	Time_Counter++;
 
 	rti_id i;
 	for (i = 0; i < RTI_MAX_FCNS; i++) 
@@ -116,4 +119,9 @@ void rti_Service(void)
 	}
 
 	return;
+}
+
+uint32_t rti_GetTimeMs()
+{
+	return RTI_TICKS_TO_MS(Time_Counter);
 }

@@ -35,6 +35,8 @@ void _puts(const char *s);
  */
 void _puti(int x);
 
+void _putu(unsigned int x);
+
 /**
  * Send a string to the UART, blocks execution until done.
  *
