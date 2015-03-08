@@ -1,0 +1,3 @@
+source -v gdb_minimal.script
+load
+delete
