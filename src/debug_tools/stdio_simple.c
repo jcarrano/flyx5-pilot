@@ -1,3 +1,25 @@
+/**
+ * @file
+ * @author Juan Ignacio Ubeira
+ * @copyright	Copyright 2013 by Juan I Carrano, Andrés Calcabrini, Juan I. Ubeira and
+ * 		Nicolás Venturo. All rights reserved. \n
+ * 		\n
+ *		This program is free software: you can redistribute it and/or modify
+ *		it under the terms of the GNU General Public License as published by
+ *		the Free Software Foundation, either version 3 of the License, or
+ *		(at your option) any later version. \n
+ * 		\n
+ *		This program is distributed in the hope that it will be useful,
+ *		but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *		MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *		GNU General Public License for more details. \n
+ * 		\n
+ *		You should have received a copy of the GNU General Public License
+ *		along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Simple routines for sending data to the uart.
+ */
+
 #include "stdio_simple.h"
 #include "../flyx5_hw.h"
 #include "../common.h"
@@ -7,11 +29,11 @@ void _puts(const char* str)
 	UARTStringPut(BASE_PERIPH(UART_DEBUG), str);
 }
 
-/**
- * Send a string to the UART, blocks execution until done.
- *
- * String must be null terminated.
- */
+void _puti(int x)
+{
+	UARTIntPut(BASE_PERIPH(UART_DEBUG), x);
+}
+
 void UARTStringPut(uint32_t ui32Base, const char *s)
 {
     char c;
@@ -22,9 +44,6 @@ void UARTStringPut(uint32_t ui32Base, const char *s)
     }
 }
 
-/**
- * Convert int to string and send to UART, blocks execution until done.
- */
 void UARTIntPut(uint32_t ui32Base, int x)
 {
 #define INT_MAX_S_LEN 32
