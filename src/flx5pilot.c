@@ -74,6 +74,7 @@ ConfigureUART2(void)
 
 void init_peripherals();
 
+
 int main(void)
 {
     struct dmu_samples_T dmuSamples;
@@ -96,13 +97,12 @@ int main(void)
 
 
     /* Initialize port */
-    //ENABLE_AND_RESET(UART_DEBUG);
+    /*
+    ENABLE_AND_RESET(UART_DEBUG);
 
+    CFG_PIN(DEBUG_RX);
+    CFG_PIN(DEBUG_TX);
 
-
-    //CFG_PIN(DEBUG_RX);
-    //CFG_PIN(DEBUG_TX);
-/*
     R_(UARTConfigSetExpClk)(BASE_PERIPH(UART_DEBUG) , R_(SysCtlClockGet)(), 115200,
                             (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
                              UART_CONFIG_PAR_NONE));
@@ -121,6 +121,8 @@ int main(void)
     //buzzer_play_note(16667, 16667/2);
 
     init_peripherals();
+
+    _puts("Peripherals done.\n\r");
 
     nlcf_init(&state);
 

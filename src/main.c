@@ -105,7 +105,7 @@ void UARTputraw16(uint16_t x)
     UARTCharPut(UART0_BASE, x & 0xFF);
 }
 
-int main(void)
+int main_juani(void)
 {
     struct dmu_samples_T dmuSamples;
     struct nlcf_state state;
