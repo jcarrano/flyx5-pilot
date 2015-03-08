@@ -43,12 +43,12 @@ static efrac norm2_sqrt(efrac f)
 	return _efrac(f_sqrt(_frac(f.v / 4), 4).v * 2);
 }
 
-quad_setpoint joystick_to_setpoint(const joy_data_t data)
+multirotor_setpoint joystick_to_setpoint(const joy_data_t data)
 {
 	vec3 stick;
 	frac throttle;
 	efrac norm2;
-	quad_setpoint newSetpoint;
+	multirotor_setpoint newSetpoint;
 
 	stick.x = _frac(data.roll >> 3);
 	stick.y = _frac(data.pitch >> 3);

@@ -1,7 +1,6 @@
 /**
  * @file
  * @author Juan I Carrano
- * @author Nicolás Venturo
  * @copyright	Copyright 2013 by Juan I Carrano, Andrés Calcabrini, Juan I. Ubeira and
  * 		Nicolás Venturo. All rights reserved. \n
  * 		\n
@@ -18,38 +17,28 @@
  *		You should have received a copy of the GNU General Public License
  *		along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Functions for mapping joystick inputs to attitude and height setpoints.
+ * Information tones.
  */
 
-#ifndef JOYSTICK_MAP_H
-#define JOYSTICK_MAP_H
+#ifndef MUSIC_H
+#define MUSIC_H
 
-#include <stdint.h>
-#include <fixed_point/types.h>
-#include <fixed_point/quaternion_types.h>
+#include "../peripheral/buzzer.h"
 
-/**
- * Set-point for a quadrotor.
- */
-typedef struct{
-	quat attitude;	/*!< Desired orientation. */
-	frac altitude;  /*!< Desired altitude. */
-} multirotor_setpoint;
+extern struct note_data music_startup[];
+extern struct note_data music_fatal_error[];
+extern struct note_data music_enter_calibration[];
+extern struct note_data music_calibration_measure1[];
+extern struct note_data music_calibration_measure2[];
+extern struct note_data music_calibration_excellent[];
+extern struct note_data music_calibration_good[];
+extern struct note_data music_calibration_ugly[];
+extern struct note_data music_calibration_bad[];
+extern struct note_data music_calibration_cancel[];
+extern struct note_data music_calibration_accept[];
+extern struct note_data music_calibration_escs_enter[];
+extern struct note_data music_calibration_escs_step[];
+extern struct note_data music_armed[];
+extern struct note_data music_unarmed[];
 
-/**
- * Joystick / Controller data.
- */
-typedef struct
-{
-	int32_t roll;
-	int32_t pitch;
-	int32_t yaw;
-	uint32_t elev;
-} joy_data_t;
-
-/**
- * Convert the joystick commmands into a quaternion setpoint.
- */
-multirotor_setpoint joystick_to_setpoint(const joy_data_t data);
-
-#endif /* JOYSTICK_MAP_H */
+#endif /* MUSIC_H */

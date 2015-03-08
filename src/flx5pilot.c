@@ -21,6 +21,8 @@
  * Entry point for the flyx5 firmware.
  */
 
+#include <stdbool.h>
+
 #include "common.h"
 #include "inc/hw_memmap.h"
 #include "driverlib/sysctl.h"
@@ -33,15 +35,19 @@
 
 #include "debug_tools/stdio_simple.h"
 #include "Misc/error.h"
+#include "Misc/music.h"
 
 #include "peripheral/buzzer.h"
 #include "peripheral/dmu_simple.h"
 #include "peripheral/joystick.h"
 #include "peripheral/usound.h"
+#include "peripheral/esc.h"
 
 #include "control/nlcf.h"
 
 #include "quad_setup.h"
+
+#include "utils/uartstdio.h"
 
 /**
  * This error routine that is called if the driver library encounters an error.
@@ -53,152 +59,208 @@ void __error__(char *filename, uint32_t line)
 }
 #endif
 
+/* Messages **/
+#define ENDL "\r\n"
+#define HELLO_TXT "This is FLYX5!"ENDL
+#define CLK_TXT "Clock speed is: "
 
-#include "utils/uartstdio.h"
-void
-ConfigureUART2(void)
-{
-    //
-    // Enable the GPIO Peripheral used by the UART.
-    //
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+typedef enum GOTO_MODE {GOTO_IDLE, GOTO_IMU_CAL, GOTO_FLY} program_mode;
 
-    //
-    // Enable UART0
-    //
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
-
-    //
-    // Configure GPIO Pins for UART mode.
-    //
-    GPIOPinConfigure(GPIO_PA0_U0RX);
-    GPIOPinConfigure(GPIO_PA1_U0TX);
-    GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
-
-    //
-    // Use the internal 16MHz oscillator as the UART clock source.
-    //
-    UARTClockSourceSet(UART0_BASE, UART_CLOCK_PIOSC);
-
-    //
-    // Initialize the UART for console I/O.
-    //
-    UARTStdioConfig(0, 115200, 16000000);
-}
-
-
+void uart_init();
 void init_peripherals();
 
+program_mode flight_control();
+program_mode imu_calibration();
+program_mode idle_process();
+void esc_calibration();
+
+struct nlcf_state Estimator_State;
 
 int main(void)
 {
-    struct dmu_samples_T dmuSamples;
-    struct nlcf_state state;
-    bool esc_calibration_mode = false;
+    program_mode pmode = GOTO_IDLE;
 
     init_failsafe();
 
+    /* **************************** initialization ************************** */
+
     init_clock();
 
-    //init_pins();
-    /* Initialise all ports */
-    //init_all_gpio();
-/*
+    /* Initialise all ports
+     * For now, each peripheral is initialising its own gpio.
+     * init_all_gpio();
+     */
+
     if (!running_under_debugger()) {
-            //SysCtlDelay(10000000);
+            SysCtlDelay(1000000);
             init_jtag_muxed_pins();
     }
-*/
 
+    uart_init();
+    buzzer_init();
 
-    /* Initialize port */
-    /*
-    ENABLE_AND_RESET(UART_DEBUG);
+    buzzer_load_score(music_startup);
 
-    CFG_PIN(DEBUG_RX);
-    CFG_PIN(DEBUG_TX);
-
-    R_(UARTConfigSetExpClk)(BASE_PERIPH(UART_DEBUG) , R_(SysCtlClockGet)(), 115200,
-                            (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
-                             UART_CONFIG_PAR_NONE));
-*/
-    ConfigureUART2();
-
-
-#define HELLO_TXT "This is FLYX5!\r\n"
-    UARTStringPut(BASE_PERIPH(UART_DEBUG), HELLO_TXT);
-#define CLK_TXT "Clock speed is: "
-#define ENDL "\r\n"
-    UARTStringPut(BASE_PERIPH(UART_DEBUG), CLK_TXT);
-    UARTIntPut(BASE_PERIPH(UART_DEBUG), R_(SysCtlClockGet)());
-    UARTStringPut(BASE_PERIPH(UART_DEBUG), ENDL);
-
-    //buzzer_play_note(16667, 16667/2);
+    _puts(HELLO_TXT);
+    _puts(CLK_TXT);
+    _puti(R_(SysCtlClockGet)());
+    _puts(ENDL);
 
     init_peripherals();
 
     _puts("Peripherals done.\n\r");
 
-    nlcf_init(&state);
+    /* ************************** end initialization ************************ */
 
+    esc_calibration();
 
-    //
-    // Loop forever.
-    //
-    bool calibrationMode = false;
+    nlcf_init(&Estimator_State);
+
+    while (1) {
+        switch (pmode) {
+        case GOTO_IDLE:
+            pmode = idle_process();
+        case GOTO_IMU_CAL:
+            pmode = imu_calibration();
+        case GOTO_FLY:
+            pmode = flight_control();
+        default:
+            err_Throw("Unknown program mode");
+            break;
+        }
+    }
+
+    return 0;
+}
+
+void esc_calibration()
+{
+    if (!running_under_debugger() && PIN_ACTIVE(BUTTON_1)) {
+        esc_SetValues(ESC_MAX_VALUE,ESC_MAX_VALUE,ESC_MAX_VALUE,ESC_MAX_VALUE);
+
+        buzzer_load_score(music_calibration_escs_enter);
+
+        while (PIN_ACTIVE(BUTTON_1))
+            ;
+
+        buzzer_load_score(music_calibration_escs_step);
+        esc_SetValues(ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE);
+    }
+}
+
+static bool joystick_check_arm(joy_data_t joy)
+{
+    const int32_t low_thres = (INT16_MIN / 10) * 9;
+    const uint32_t low_thres_u = (UINT16_MAX / 10) * 9;
+
+    return joy.roll < low_thres && joy.roll < low_thres &&
+            joy.pitch < low_thres && joy.elev < low_thres_u;
+}
+
+program_mode idle_process()
+{
+    program_mode destination;
+
+    esc_SetValues(ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE);
 
     while(1)
     {
-    	joy_data_t joyData;
-    	quat q_setp;
+        struct dmu_samples_T imu_samples;
 
-    	if(dmu_PumpEvents(&dmuSamples))
+    	if(dmu_PumpEvents(&imu_samples))
     	{
-			nlcf_process(&state, dmuSamples.gyro, dmuSamples.accel, NULL);
+            joy_data_t joystick_snapshot;
 
-			calibrationMode = qset_TryDmuCalibration(calibrationMode, &state);
+			nlcf_process(&Estimator_State, imu_samples.gyro, imu_samples.accel, NULL);
 
-			quat q_est = dq_to_q(state.q);
-/*
-			_puts("\x0E\x0C");
-			UARTputraw16(q_est.r.v);
-			UARTputraw16(q_est.v.x.v);
-			UARTputraw16(q_est.v.y.v);
-			UARTputraw16(q_est.v.z.v);
-			*/
+            IntMasterDisable();
+            joystick_snapshot = joy_data;
+            IntMasterEnable();
+
+            if (joystick_check_arm(joystick_snapshot)) {
+                destination = GOTO_FLY;
+                break;
+            }
     	}
 
-    	SysCtlDelay(8000000 / 3);
-
-    	IntMasterDisable();
-
-    	joyData = joy_data;
-
-    	IntMasterEnable();
-
-    	q_setp = joystick_to_setpoint(joyData).attitude;
-
-		_puts("\x0E\x0C");
-		UARTputraw16(q_setp.r.v);
-		UARTputraw16(q_setp.v.x.v);
-		UARTputraw16(q_setp.v.y.v);
-		UARTputraw16(q_setp.v.z.v);
-
-    	//UARTprintf("%u %d %d %d \n\r", joyData.elev, joyData.pitch, joyData.roll, joyData.yaw);
+        if (PIN_ACTIVE(BUTTON_1) && PIN_ACTIVE(BUTTON_2)) {
+            destination = GOTO_IMU_CAL;
+            break;
+        }
     }
 
+    return destination;
+}
+
+program_mode imu_calibration()
+{
+    program_mode destination;
+
+    esc_SetValues(ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE);
+
+    buzzer_load_score(music_enter_calibration);
+
+    while(1)
+    {
+
+    }
+
+    return destination;
+}
+
+program_mode flight_control()
+{
+    program_mode destination;
+
+    buzzer_load_score(music_armed);
+
+    while(1)
+    {
+        struct dmu_samples_T imu_samples;
+    	joy_data_t joystick_snapshot;
+
+    	if(dmu_PumpEvents(&imu_samples))
+    	{
+            multirotor_setpoint setpoint;
+            vec3 angle_rate;
+
+			nlcf_process(&Estimator_State, imu_samples.gyro, imu_samples.accel, &angle_rate);
+
+            IntMasterDisable();
+            joystick_snapshot = joy_data;
+            IntMasterEnable();
+            setpoint = joystick_to_setpoint(joystick_snapshot);
+
+			//calibrationMode = qset_TryDmuCalibration(calibrationMode, &state);
+    	}
+    }
+
+    return destination;
+}
+
+void uart_init(void)
+{
+    R_(SysCtlPeripheralEnable)(GPIO_PERIPH(DEBUG_RX));
+    ENABLE_AND_RESET(UART_DEBUG);
+
+    CFG_PIN(DEBUG_RX);
+    CFG_PIN(DEBUG_TX);
+
+    R_(UARTClockSourceSet)(BASE_PERIPH(UART_DEBUG), UART_CLOCK_SYSTEM);
+
+    R_(UARTConfigSetExpClk)(BASE_PERIPH(UART_DEBUG) , R_(SysCtlClockGet)(), 115200,
+                            (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+                             UART_CONFIG_PAR_NONE));
 }
 
 void init_peripherals()
 {
 	err_Init(NULL, _puts, NULL);
-    //buzzer_init();
-    //dmu_Init();
+    dmu_Init();
     joy_Init();
     //usound_Init();
 
     rti_Init();
-
 }
 
 
