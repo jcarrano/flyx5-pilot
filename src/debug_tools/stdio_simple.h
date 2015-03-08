@@ -18,4 +18,6 @@ void _puts(const char *s);
 
 void UARTIntPut(uint32_t ui32Base, int x);
 
+void UARTputraw16(uint16_t x);
+
 #endif /* STDIO_SIMPLE_H_ */

@@ -99,12 +99,6 @@ struct {
 
 void PrintMeters(int32_t meters);
 
-void UARTputraw16(uint16_t x)
-{
-    UARTCharPut(UART0_BASE, x / 256);
-    UARTCharPut(UART0_BASE, x & 0xFF);
-}
-
 int main_juani(void)
 {
     struct dmu_samples_T dmuSamples;
