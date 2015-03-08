@@ -1,7 +1,8 @@
 /**
- * Extra functions to complement TivaWare's gpio driver.
- *
+ * @file
  * @author Juan I Carrano
+ *
+ * Extra functions to complement TivaWare's gpio driver.
  */
 
 #include "gpio_extra.h"
