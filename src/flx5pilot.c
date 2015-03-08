@@ -11,6 +11,7 @@
 #include "inc/hw_memmap.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/uart.h"
+#include "driverlib/interrupt.h"
 #include "flyx5_hw.h"
 #include "hw_init.h"
 
@@ -60,7 +61,12 @@ void UARTIntPut(uint32_t ui32Base, int x)
     UARTStringPut(ui32Base, s + i + 1);
 }
 
-int main_carry(void)
+struct note_data song[] = { {69, 200, NOTE_DURATION(4)},
+                         {72, 200, NOTE_DURATION(4)},
+                         {76, 200, NOTE_DURATION(2)},
+                         SCORE_STOP};
+
+int main(void)
 {
     init_failsafe();
 
@@ -77,8 +83,8 @@ int main_carry(void)
 
     /* Initialize port */
     ENABLE_AND_RESET(UART_DEBUG);
-//    CFG_PIN(DEBUG_RX);
-//    CFG_PIN(DEBUG_TX);
+    CFG_PIN(DEBUG_RX);
+    CFG_PIN(DEBUG_TX);
 
     R_(UARTConfigSetExpClk)(BASE_PERIPH(UART_DEBUG) , R_(SysCtlClockGet)(), 115200,
                             (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
@@ -92,9 +98,11 @@ int main_carry(void)
     UARTIntPut(BASE_PERIPH(UART_DEBUG), R_(SysCtlClockGet)());
     UARTStringPut(BASE_PERIPH(UART_DEBUG), ENDL);
 
+    R_(IntMasterEnable)();
+
     buzzer_init();
 
-    buzzer_play_note(16667, 16667/2);
+    buzzer_load_score(song);
 
     //
     // Loop forever.
@@ -105,11 +113,11 @@ int main_carry(void)
         c = (c <= 'z' && c >= 'a')? c - 'a' + 'A' : c;
         R_(UARTCharPut)(BASE_PERIPH(UART_DEBUG), c);
 
-        buzzer_play_note(16667, (16667/4)*3);
+        buzzer_load_score(song);
 
         c = R_(UARTCharGet)(BASE_PERIPH(UART_DEBUG));
         R_(UARTCharPut)(BASE_PERIPH(UART_DEBUG), c);
 
-        buzzer_play_note(16667, 16667/2);
+        buzzer_stop();
     }
 }
