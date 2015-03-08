@@ -34,6 +34,12 @@ void _puti(int x)
 	UARTIntPut(BASE_PERIPH(UART_DEBUG), x);
 }
 
+void _putu(unsigned int x)
+{
+	UARTUIntPut(BASE_PERIPH(UART_DEBUG), x);
+}
+
+
 void UARTStringPut(uint32_t ui32Base, const char *s)
 {
     char c;
@@ -47,6 +53,21 @@ void UARTStringPut(uint32_t ui32Base, const char *s)
 void UARTIntPut(uint32_t ui32Base, int x)
 {
 #define INT_MAX_S_LEN 32
+    char s[INT_MAX_S_LEN];
+    int i = INT_MAX_S_LEN-2;
+
+    s[INT_MAX_S_LEN-1] = 0;
+
+    while (x) {
+        s[i--] = x%10 + '0';
+        x = x/10;
+    }
+
+    UARTStringPut(ui32Base, s + i + 1);
+}
+
+void UARTUIntPut(uint32_t ui32Base, unsigned int x)
+{
     char s[INT_MAX_S_LEN];
     int i = INT_MAX_S_LEN-2;
 

@@ -21,8 +21,9 @@
  */
 
 #include <stdbool.h>
-#include "sbutton.h"
 #include "rti.h"
+#include "../debug_tools/stdio_simple.h"
+#include "sbutton.h"
 
 void sbutton_init(sbutton *s)
 {
@@ -36,9 +37,8 @@ bool s_hold(sbutton *s, unsigned int hold_time_ms, bool raw_status)
 	if (raw_status) {
 		unsigned int curr_time = rti_GetTimeMs();
 
-		if (s->activation_valid
-			&& curr_time - s->activation_ms > hold_time_ms) {
-			r = true;
+		if (s->activation_valid) {
+			r = curr_time - s->activation_ms > hold_time_ms;
 		} else {
 			s->activation_valid = true;
 			s->activation_ms = curr_time;

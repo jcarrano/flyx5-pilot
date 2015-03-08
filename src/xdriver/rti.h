@@ -16,11 +16,6 @@ typedef uint32_t rti_time; // A type for expressing time, each rti_time equals o
 #if RTI_FREQ == (1000)
 #define RTI_TICKS_TO_MS(ticks) ((uint32_t)ticks)
 #endif
-
-/**
- * Get the current time in ms.
- */
-#define rti_GetTimeMs() RTI_TICKS_TO_MS(SysTickValueGet())
 																 // If (ms) is set in compile time, this macro consumes no extra processor time.
 typedef int32_t rti_id; // An id for a registered callback
 
@@ -46,5 +41,10 @@ void rti_SetPeriod(rti_id id, rti_time period);
 
 void rti_Cancel(rti_id n);
 // Cancels a registered rti_id
+
+/**
+ * Get the current time in ms.
+ */
+uint32_t rti_GetTimeMs();
 
 #endif
