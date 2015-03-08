@@ -8,6 +8,10 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+/* Array size */
+
+#define ARSIZE(a) ((sizeof(a))/(sizeof((a)[0])))
+
 /* Boolean macros */
 
 #define BOOL(x) ((x) != 0)
