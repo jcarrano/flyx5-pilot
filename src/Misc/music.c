@@ -43,8 +43,8 @@ struct note_data music_fatal_error[] = {
 
 struct note_data music_enter_calibration[] = {
 	{60, VELOCITY_DEFAULT, NOTE_DURATION(16)},
-	{60, VELOCITY_DEFAULT, NOTE_DURATION(16)},
 	{0, VELOCITY_SILENCE, NOTE_DURATION(16)},
+	{60, VELOCITY_DEFAULT, NOTE_DURATION(16)},
 	{71, VELOCITY_DEFAULT, NOTE_DURATION_DOT(8)},
 	SCORE_STOP
 	};

@@ -49,6 +49,8 @@
 
 #include "utils/uartstdio.h"
 
+#include "debug_tools/debug.h"
+
 /**
  * This error routine that is called if the driver library encounters an error.
  */
@@ -88,8 +90,9 @@ int main(void)
 
     /* Initialise all ports
      * For now, each peripheral is initialising its own gpio.
-     * init_all_gpio();
      */
+     init_all_gpio();
+
 
     if (!running_under_debugger()) {
             SysCtlDelay(1000000);
@@ -112,7 +115,7 @@ int main(void)
 
     /* ************************** end initialization ************************ */
 
-    esc_calibration();
+    //esc_calibration();
 
     nlcf_init(&Estimator_State);
 
@@ -120,10 +123,13 @@ int main(void)
         switch (pmode) {
         case GOTO_IDLE:
             pmode = idle_process();
+            break;
         case GOTO_IMU_CAL:
             pmode = imu_calibration();
+            break;
         case GOTO_FLY:
             pmode = flight_control();
+            break;
         default:
             err_Throw("Unknown program mode");
             break;
@@ -160,7 +166,6 @@ static bool joystick_check_arm(joy_data_t joy)
 program_mode idle_process()
 {
     program_mode destination;
-
     esc_SetValues(ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE);
 
     while(1)
@@ -183,7 +188,7 @@ program_mode idle_process()
             }
     	}
 
-        if (PIN_ACTIVE(BUTTON_1) && PIN_ACTIVE(BUTTON_2)) {
+        if (PIN_ACTIVE(BUTTON_2)) {
             destination = GOTO_IMU_CAL;
             break;
         }
@@ -194,18 +199,26 @@ program_mode idle_process()
 
 program_mode imu_calibration()
 {
-    program_mode destination;
+    struct dmu_samples_T imu_samples;
 
     esc_SetValues(ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE);
 
     buzzer_load_score(music_enter_calibration);
 
-    while(1)
-    {
+    nlcf_init(&Estimator_State);
+    bool calibrationMode = qset_TryDmuCalibration(false, &Estimator_State);
 
+    while(calibrationMode)
+    {
+    	if(dmu_PumpEvents(&imu_samples))
+    	{
+			nlcf_process(&Estimator_State, imu_samples.gyro, imu_samples.accel, NULL);
+
+			calibrationMode = qset_TryDmuCalibration(calibrationMode, &Estimator_State);
+    	}
     }
 
-    return destination;
+    return GOTO_IDLE;
 }
 
 program_mode flight_control()
@@ -235,6 +248,8 @@ program_mode flight_control()
     	}
     }
 
+    buzzer_load_score(music_unarmed);
+
     return destination;
 }
 
@@ -251,16 +266,21 @@ void uart_init(void)
     R_(UARTConfigSetExpClk)(BASE_PERIPH(UART_DEBUG) , R_(SysCtlClockGet)(), 115200,
                             (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
                              UART_CONFIG_PAR_NONE));
+
+    //
+    // Initialize the UART for console I/O.
+    //
+    UARTStdioConfig(0, 115200, R_(SysCtlClockGet)());
 }
 
 void init_peripherals()
 {
 	err_Init(NULL, _puts, NULL);
+	rti_Init();
     dmu_Init();
     joy_Init();
+    esc_Init();
     //usound_Init();
-
-    rti_Init();
 }
 
 
