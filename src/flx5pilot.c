@@ -29,6 +29,7 @@
 #include "driverlib/uart.h"
 #include "driverlib/interrupt.h"
 #include "xdriver/rti.h"
+#include "xdriver/sbutton.h"
 
 #include "flyx5_hw.h"
 #include "hw_init.h"
@@ -44,6 +45,7 @@
 #include "peripheral/esc.h"
 
 #include "control/nlcf.h"
+#include "control/multirotor_control.h"
 
 #include "quad_setup.h"
 
@@ -65,6 +67,8 @@ void __error__(char *filename, uint32_t line)
 #define ENDL "\r\n"
 #define HELLO_TXT "This is FLYX5!"ENDL
 #define CLK_TXT "Clock speed is: "
+
+#define ARM_HOLD_TIME_MS 3000
 
 typedef enum GOTO_MODE {GOTO_IDLE, GOTO_IMU_CAL, GOTO_FLY} program_mode;
 
@@ -166,7 +170,10 @@ static bool joystick_check_arm(joy_data_t joy)
 program_mode idle_process()
 {
     program_mode destination;
+    sbutton arm_button;
     esc_SetValues(ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE);
+
+    sbutton_init(&arm_button);
 
     while(1)
     {
@@ -182,7 +189,7 @@ program_mode idle_process()
             joystick_snapshot = joy_data;
             IntMasterEnable();
 
-            if (joystick_check_arm(joystick_snapshot)) {
+            if (s_hold(&arm_button, ARM_HOLD_TIME_MS, joystick_check_arm(joystick_snapshot))) {
                 destination = GOTO_FLY;
                 break;
             }
@@ -221,11 +228,22 @@ program_mode imu_calibration()
     return GOTO_IDLE;
 }
 
+static void _esc_set(frac motor_thrusts[4])
+{
+#define _t2t(i) (((uint32_t)(motor_thrusts[i].v))*2)
+	esc_SetValues(_t2t(0), _t2t(1),_t2t(2),_t2t(3));
+#undef _t2t
+}
+
 program_mode flight_control()
 {
-    program_mode destination;
+	sbutton arm_button;
+    struct att_ctrl_state controller_state;
 
     buzzer_load_score(music_armed);
+
+    sbutton_init(&arm_button);
+    att_ctrl_init(&controller_state, &ctrl_default_params);
 
     while(1)
     {
@@ -236,6 +254,8 @@ program_mode flight_control()
     	{
             multirotor_setpoint setpoint;
             vec3 angle_rate;
+            vec3 torques;
+            frac motor_thrusts[4];
 
 			nlcf_process(&Estimator_State, imu_samples.gyro, imu_samples.accel, &angle_rate);
 
@@ -244,13 +264,22 @@ program_mode flight_control()
             IntMasterEnable();
             setpoint = joystick_to_setpoint(joystick_snapshot);
 
-			//calibrationMode = qset_TryDmuCalibration(calibrationMode, &state);
+            torques = att_ctrl_step(&controller_state, setpoint.attitude, dq_to_q(Estimator_State.q), angle_rate);
+
+            control_mixer4(setpoint.altitude, torques, motor_thrusts);
+
+            _esc_set(motor_thrusts);
+
+            if (s_hold(&arm_button, ARM_HOLD_TIME_MS, joystick_check_arm(joystick_snapshot))) {
+				break;
+            }
     	}
     }
 
+    esc_SetValues(ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE);
     buzzer_load_score(music_unarmed);
 
-    return destination;
+    return GOTO_IDLE;
 }
 
 void uart_init(void)

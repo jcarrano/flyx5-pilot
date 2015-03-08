@@ -27,6 +27,14 @@
 #include "fixed_point/vector.h"
 #include "fixed_point/fixed_point.h"
 
+struct att_ctrl_params ctrl_default_params = {
+		{{6500/256}, {6500/256}, {6500/256}},
+		{{256}, {256}, {280}},
+		8000,
+		{250}
+};
+
+
 void att_ctrl_init(struct att_ctrl_state *state, struct att_ctrl_params *params)
 {
 	state->parameters = *params;
