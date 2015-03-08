@@ -21,6 +21,7 @@
 #include "../debug_tools/led.h"	// Debug purposes
 #include "../utils/uartstdio.h"
 #include "../debug_tools/debug.h"
+#include "../debug_tools/stdio_simple.h"
 
 /*
  * Driver for single module;
@@ -217,6 +218,8 @@ void iic_InterruptHandler(uint8_t moduleNumber, uint32_t moduleBase, uint32_t in
 		Putchar('z');
 	#endif
 
+	//SysCtlDelay(SysCtlClockGet() / 3 / 100);
+
 	// End of Transmission detection
 	if (iic_dataPtr->currCB == NULL)
 	{
@@ -235,8 +238,8 @@ void iic_InterruptHandler(uint8_t moduleNumber, uint32_t moduleBase, uint32_t in
 	uint32_t a = I2CMasterErr(moduleBase);
 	if (a != I2C_MASTER_ERR_NONE)
 	{
-		#ifdef IIC_DEBUG
-			Putchar('-');
+		#ifdef IIC_DEBUG_ERR
+			UARTIntPut(UART0_BASE, a);Putchar('-');
 		#endif
 		IntDisable(interruptBase);
 
