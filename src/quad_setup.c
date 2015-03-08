@@ -13,6 +13,7 @@
 #include "debug_tools/stdio_simple.h"
 #include "utils/uartstdio.h"
 
+#define ANTI_BOUNCE_MS 400
 
 struct {
 
@@ -21,7 +22,7 @@ struct {
 
 	bool antiBounce;
 
-}setup_data;
+}setup_data = {0, {UNIT_QUAT, UNIT_QUAT}, true};
 
 void _setAntiBounce(void* data,  rti_time period, rti_id id);
 
@@ -44,9 +45,10 @@ void qset_TryEscCalibration(void)
 
 bool qset_TryDmuCalibration(bool calibrationMode, struct nlcf_state* statePtr)
 {
+
 	if (!calibrationMode)
 	{
-		if (!PIN_ACTIVE(BUTTON_2))
+		if (!PIN_ACTIVE(BUTTON_2) || (!setup_data.antiBounce))
 		{
 			return false;
 		}
@@ -55,7 +57,7 @@ bool qset_TryDmuCalibration(bool calibrationMode, struct nlcf_state* statePtr)
 			calibrationMode = true;
 			setup_data.measurementCount = 0;
 			setup_data.antiBounce = false;
-			rti_Register(_setAntiBounce, &setup_data.antiBounce, RTI_ONCE, RTI_MS_TO_TICKS(120));
+			rti_Register(_setAntiBounce, &setup_data.antiBounce, RTI_ONCE, RTI_MS_TO_TICKS(ANTI_BOUNCE_MS));
 			_puts("Entered calibration mode. Press BTN2 to trigger measures.\n\r");
 			return calibrationMode;
 		}
@@ -77,7 +79,7 @@ bool qset_TryDmuCalibration(bool calibrationMode, struct nlcf_state* statePtr)
 	else
 	{
 		setup_data.antiBounce = false;
-		rti_Register(_setAntiBounce, &setup_data.antiBounce, RTI_ONCE, RTI_MS_TO_TICKS(120));
+		rti_Register(_setAntiBounce, &setup_data.antiBounce, RTI_ONCE, RTI_MS_TO_TICKS(ANTI_BOUNCE_MS));
 	}
 
 	if (setup_data.measurementCount == 0)
@@ -101,16 +103,19 @@ bool qset_TryDmuCalibration(bool calibrationMode, struct nlcf_state* statePtr)
 		if (calibrationOutput.quality == CAL_BAD)
 		{
 			setup_data.measurementCount = 1;	// Stay looping second measurement.
-			_puts("Calibrate again\n\r");
+			_puts("Calibrate again.\n\r");
 		}
-		nlcf_apply_correction(statePtr, calibrationOutput);
-
-		_puts("Press BTN2 to exit calibration. \n\r");
+		else
+		{
+			nlcf_apply_correction(statePtr, calibrationOutput);
+			_puts("Press BTN2 to exit calibration. \n\r");
+		}
 
 	}
 	else if (setup_data.measurementCount == 2)
 	{
 		calibrationMode = false;
+		_puts("Calibrated. \n\r");
 	}
 
 
