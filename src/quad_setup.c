@@ -13,6 +13,8 @@
 #include "debug_tools/stdio_simple.h"
 #include "utils/uartstdio.h"
 
+#include "Misc/music.h"
+
 #define ANTI_BOUNCE_MS 400
 
 struct {
@@ -86,6 +88,7 @@ bool qset_TryDmuCalibration(bool calibrationMode, struct nlcf_state* statePtr)
 	{
 		setup_data.calibration[0] = dq_to_q(statePtr->q);			// state is not written during interrupts, no need of "cli"
 		setup_data.measurementCount++;
+		buzzer_load_score(music_calibration_measure1);
 		_puts("First measurement done\n\r");
 	}
 
@@ -100,15 +103,29 @@ bool qset_TryDmuCalibration(bool calibrationMode, struct nlcf_state* statePtr)
 		UARTprintf("Correction: %d %d %d %d\n\r", calibrationOutput.correction.r.v, calibrationOutput.correction.v.x.v,
 				calibrationOutput.correction.v.y.v, calibrationOutput.correction.v.z.v);
 
-		if (calibrationOutput.quality == CAL_BAD)
-		{
+		switch (calibrationOutput.quality) {
+		case CAL_BAD:
 			setup_data.measurementCount = 1;	// Stay looping second measurement.
+			buzzer_load_score(music_calibration_bad);
 			_puts("Calibrate again.\n\r");
+			break;
+		case CAL_UGLY:
+			buzzer_load_score(music_calibration_ugly);
+			_puts("Calibration ugly.\n\r");
+			break;
+		case CAL_GOOD:
+			buzzer_load_score(music_calibration_good);
+			_puts("Calibration good.\n\r");
+			break;
+		case CAL_EXCELLENT:
+			buzzer_load_score(music_calibration_excellent);
+			_puts("Calibration excellent.\n\r");
+			break;
 		}
-		else
-		{
+
+		if (calibrationOutput.quality != CAL_BAD) {
 			nlcf_apply_correction(statePtr, calibrationOutput);
-			_puts("Press BTN2 to exit calibration. \n\r");
+			_puts("Calibration applied.\n\r");
 		}
 
 	}
@@ -117,7 +134,6 @@ bool qset_TryDmuCalibration(bool calibrationMode, struct nlcf_state* statePtr)
 		calibrationMode = false;
 		_puts("Calibrated. \n\r");
 	}
-
 
 	return calibrationMode;
 }
