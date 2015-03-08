@@ -95,7 +95,7 @@ int main(void)
     /* Initialise all ports
      * For now, each peripheral is initialising its own gpio.
      */
-     init_all_gpio();
+    init_all_gpio();
 
 
     if (!running_under_debugger()) {
@@ -119,7 +119,7 @@ int main(void)
 
     /* ************************** end initialization ************************ */
 
-    //esc_calibration();
+    esc_calibration();
 
     nlcf_init(&Estimator_State);
 
@@ -147,6 +147,7 @@ void esc_calibration()
 {
     if (!running_under_debugger() && PIN_ACTIVE(BUTTON_1)) {
         esc_SetValues(ESC_MAX_VALUE,ESC_MAX_VALUE,ESC_MAX_VALUE,ESC_MAX_VALUE);
+        esc_EnableOutput();
 
         buzzer_load_score(music_calibration_escs_enter);
 
@@ -171,7 +172,9 @@ program_mode idle_process()
 {
     program_mode destination;
     sbutton arm_button;
+
     esc_SetValues(ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE);
+    esc_EnableOutput();
 
     sbutton_init(&arm_button);
 

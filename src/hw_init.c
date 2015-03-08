@@ -41,7 +41,7 @@ void init_jtag_muxed_pins()
 	gpio_commit_ctrl(PORT_OF(LED_B), PIN_N(LED_B), Unlock);
 
 	/* Modify pins */
-	CFG_PIN(	BUTTON_1	)
+	CFG_BUTTON(	BUTTON_1	)
 	CFG_PIN(	LED_A		)
 	CFG_PIN(	LED_B		)
 
@@ -118,9 +118,7 @@ void init_failsafe()
 	R_(SysCtlPeripheralEnable)(GPIO_PERIPH(BUTTON_2));
 	R_(SysCtlPeripheralReset)(GPIO_PERIPH(BUTTON_2));
 
-	CFG_PIN(BUTTON_2);
-	R_(GPIOPadConfigSet)(PORT_OF(BUTTON_2),
-		BIT(PIN_N(BUTTON_2)), GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
+	CFG_BUTTON(BUTTON_2);
 
 	if (PIN_ACTIVE(BUTTON_2)) {
 		while (1) {

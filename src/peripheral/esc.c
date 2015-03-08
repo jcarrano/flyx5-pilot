@@ -73,13 +73,15 @@ void esc_InitTimers(void)
 	TimerLoadSet(ESC_TIMER(3), TIMER_A_OR_B(3), ESC_PERIOD);
 
 	esc_SetValues(0, 0, 0, 0);
+}
 
+void esc_EnableOutput(void)
+{
 	TimerEnable(ESC_TIMER(0), TIMER_A_OR_B(0));
 	TimerEnable(ESC_TIMER(1), TIMER_A_OR_B(1));
 	TimerEnable(ESC_TIMER(2), TIMER_A_OR_B(2));
 	TimerEnable(ESC_TIMER(3), TIMER_A_OR_B(3));
 }
-
 
 void esc_SetValues(uint32_t ch0, uint32_t ch1, uint32_t ch2, uint32_t ch3)
 {
