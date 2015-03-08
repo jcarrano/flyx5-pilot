@@ -3,14 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-
-typedef struct
-{
-	int32_t roll;
-	int32_t pitch;
-	int32_t yaw;
-	uint32_t elev;
-} joy_data_t;
+#include "../control/joystick_map.h"
 
 volatile extern joy_data_t joy_data;
 
