@@ -10,6 +10,8 @@
 #include "driverlib/sysctl.h"
 #include "../xdriver/timer_pwm.h"
 
+#define N_TONES 12
+
 #define BUZZER_LO_FREQ_CODE ('a')
 #define BUZZER_HI_FREQ_CODE ('z')
 #define BUZZER_N_FREQS (BUZZER_HI_FREQ_CODE - BUZZER_LO_FREQ_CODE + 1)
@@ -32,8 +34,8 @@ struct buzzer_data {
  * durations.
  */
 struct {
-	uint16_t period[BUZZER_N_FREQS];
-	uint16_t durations[BUZZER_N_DURS];
+	uint16_t periods[N_TONES];
+	uint16_t durations[N_TONES];
 } Buzzer_Tables;
 
 /**
@@ -51,6 +53,10 @@ void buzzer_init()
 {
 	uint32_t ckl_freq = R_(SysCtlClockGet)();
 	uint32_t sequencer_prescaler = (ckl_freq >> 16) * BUZZER_DUR_HI;
+	static int freqs16[N_TONES] = {
+	/*start with 220 x 16*/	3520, 3729, 3951, 4186, 4435, 4699, 4978, 5274,
+			5588, 5920, 6272, 6645 /* end with 415.3 x 16*/};
+	int i;
 
 	ENABLE_AND_RESET(TIMER_BUZZER);
 
@@ -66,6 +72,10 @@ void buzzer_init()
 
 	R_(TimerPrescaleSet)(BASE_PERIPH(TIMER_BUZZER),
 				sTIMER(TIMER_BUZZER_SEQ), sequencer_prescaler);
+
+	for (i = 0; i < ARSIZE(freqs16); i++) {
+		Buzzer_Tables[i] = (clk_freq*16)/freqs16[i];
+	}
 }
 
 void buzzer_play_note(int period, int semiperiod)
