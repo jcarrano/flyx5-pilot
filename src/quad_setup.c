@@ -99,6 +99,9 @@ bool qset_TryDmuCalibration(bool calibrationMode, struct nlcf_state* statePtr)
 		_puts("Second measurement done\n\r");
 
 		calibrationOutput = att_calibrate(setup_data.calibration[0], setup_data.calibration[1]);
+
+		_puts("att calibrate pass\n\r");
+
 		UARTprintf("Cal output: %d\n\r", calibrationOutput.quality);
 		UARTprintf("Correction: %d %d %d %d\n\r", calibrationOutput.correction.r.v, calibrationOutput.correction.v.x.v,
 				calibrationOutput.correction.v.y.v, calibrationOutput.correction.v.z.v);

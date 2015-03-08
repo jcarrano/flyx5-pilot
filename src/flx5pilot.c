@@ -166,11 +166,7 @@ static bool joystick_check_arm(joy_data_t joy)
 program_mode idle_process()
 {
     program_mode destination;
-    Putchar('i');
-
     esc_SetValues(ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE);
-
-    Putchar('e');
 
     while(1)
     {
@@ -270,6 +266,11 @@ void uart_init(void)
     R_(UARTConfigSetExpClk)(BASE_PERIPH(UART_DEBUG) , R_(SysCtlClockGet)(), 115200,
                             (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
                              UART_CONFIG_PAR_NONE));
+
+    //
+    // Initialize the UART for console I/O.
+    //
+    UARTStdioConfig(0, 115200, R_(SysCtlClockGet)());
 }
 
 void init_peripherals()
