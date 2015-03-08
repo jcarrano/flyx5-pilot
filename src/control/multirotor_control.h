@@ -52,6 +52,8 @@ struct att_ctrl_state {
 	bool integral_enabled;	/*!< True if integral control is enabled.*/
 };
 
+extern struct att_ctrl_params ctrl_default_params;
+
 /* ********************* Attitude control ********************************* */
 
 /**
