@@ -20,7 +20,7 @@
  * Information tones.
  */
 
-#include "peripheral/buzzer.h"
+#include "../peripheral/buzzer.h"
 
 struct note_data music_startup[] = {
 	{71, 200, NOTE_DURATION(16)},
