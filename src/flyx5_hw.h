@@ -74,6 +74,14 @@
 
 #define PIN_ACTIVE(...) _PIN_ACTIVE(__VA_ARGS__)
 
+/* Config Button */
+
+#define CFG_BUTTON(b) { \
+		CFG_PIN(b) \
+		R_(GPIOPadConfigSet)(PORT_OF(b), \
+			BIT(PIN_N(b)), GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU); \
+	}
+
 /* Get the gpio peripheral for pin */
 
 #define GPIO_PERIPH_(port, ...) GLUE(SYSCTL_PERIPH_GPIO, port) MDUMMY((__VA_ARGS__))
