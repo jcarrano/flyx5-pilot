@@ -40,3 +40,9 @@ void UARTIntPut(uint32_t ui32Base, int x)
 
     UARTStringPut(ui32Base, s + i + 1);
 }
+
+void UARTputraw16(uint16_t x)
+{
+    UARTCharPut(UART0_BASE, x / 256);
+    UARTCharPut(UART0_BASE, x & 0xFF);
+}

@@ -50,11 +50,11 @@ quad_setpoint joystick_to_setpoint(const joy_data_t data)
 	efrac norm2;
 	quad_setpoint newSetpoint;
 
-	stick.x = _frac(data.roll >> 17);
-	stick.y = _frac(data.pitch >> 17);
-	stick.z = _frac(data.yaw >> 17);
+	stick.x = _frac(data.roll >> 3);
+	stick.y = _frac(data.pitch >> 3);
+	stick.z = _frac(data.yaw >> 3);
 
-	throttle = _frac(data.elev >> 17);
+	throttle = _frac(data.elev >> 1);
 
 	norm2 = f_to_ef(f_mul(stick.x, stick.x));
 	norm2 = ef_f_add(norm2, f_mul(stick.y, stick.y));

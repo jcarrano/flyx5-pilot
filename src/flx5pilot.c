@@ -11,6 +11,7 @@
 #include "inc/hw_memmap.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/uart.h"
+#include "driverlib/interrupt.h"
 #include "xdriver/rti.h"
 
 #include "flyx5_hw.h"
@@ -134,28 +135,56 @@ int main(void)
 
     while(1)
     {
+    	joy_data_t joyData;
+    	quat q_setp;
 
     	if(dmu_PumpEvents(&dmuSamples))
     	{
 			nlcf_process(&state, dmuSamples.gyro, dmuSamples.accel, NULL);
 
 			calibrationMode = qset_TryDmuCalibration(calibrationMode, &state);
-			//quat q_est = dq_to_q(state.q);
+
+			quat q_est = dq_to_q(state.q);
+/*
+			_puts("\x0E\x0C");
+			UARTputraw16(q_est.r.v);
+			UARTputraw16(q_est.v.x.v);
+			UARTputraw16(q_est.v.y.v);
+			UARTputraw16(q_est.v.z.v);
+			*/
     	}
 
+    	SysCtlDelay(8000000 / 3);
+
+    	IntMasterDisable();
+
+    	joyData = joy_data;
+
+    	IntMasterEnable();
+
+    	q_setp = joystick_to_setpoint(joyData).attitude;
+
+		_puts("\x0E\x0C");
+		UARTputraw16(q_setp.r.v);
+		UARTputraw16(q_setp.v.x.v);
+		UARTputraw16(q_setp.v.y.v);
+		UARTputraw16(q_setp.v.z.v);
+
+    	//UARTprintf("%u %d %d %d \n\r", joyData.elev, joyData.pitch, joyData.roll, joyData.yaw);
     }
 
 }
 
 void init_peripherals()
 {
+	err_Init(NULL, _puts, NULL);
     //buzzer_init();
-    dmu_Init();
-    //joy_Init();
+    //dmu_Init();
+    joy_Init();
     //usound_Init();
 
     rti_Init();
-	err_Init(NULL, _puts, NULL);
+
 }
 
 
