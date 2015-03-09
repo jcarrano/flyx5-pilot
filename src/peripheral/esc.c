@@ -23,11 +23,7 @@
 
 #define ESC_PERIOD 200000 // 2.5ms - 400Hz (for a 80MHz clock)
 #define ESC_MIN (ESC_PERIOD - 80000) // 1ms
-#define ESC_SPAN 80000 // 1ms span
-
-#define ESC_VALUE(percent) (ESC_MIN - ((ESC_SPAN * ((percent) & 0x7FFF)) / 0x7FFF))
-
-#define ESC_LEVEL
+#define ESC_SPAN 80000 // 1ms span (span = difference between min and max)
 
 bool esc_IsInit = false;
 
@@ -72,7 +68,7 @@ void esc_InitTimers(void)
 	TimerLoadSet(ESC_TIMER(2), TIMER_A_OR_B(2), ESC_PERIOD);
 	TimerLoadSet(ESC_TIMER(3), TIMER_A_OR_B(3), ESC_PERIOD);
 
-	esc_SetValues(0, 0, 0, 0);
+	esc_ToMinimum();
 }
 
 void esc_EnableOutput(void)
@@ -83,10 +79,16 @@ void esc_EnableOutput(void)
 	TimerEnable(ESC_TIMER(3), TIMER_A_OR_B(3));
 }
 
-void esc_SetValues(uint32_t ch0, uint32_t ch1, uint32_t ch2, uint32_t ch3)
+static uint32_t thrust_to_value(frac x)
 {
-	TimerMatchSet(ESC_TIMER(0), TIMER_A_OR_B(0), ESC_VALUE(ch0));
-	TimerMatchSet(ESC_TIMER(1), TIMER_A_OR_B(1), ESC_VALUE(ch1));
-	TimerMatchSet(ESC_TIMER(2), TIMER_A_OR_B(2), ESC_VALUE(ch2));
-	TimerMatchSet(ESC_TIMER(3), TIMER_A_OR_B(3), ESC_VALUE(ch3));
+	// The counter counts down.
+	return ESC_MIN - f_imul_i(x, ESC_SPAN);
+}
+
+void esc_SetThrust(frac ch0, frac ch1, frac ch2, frac ch3)
+{
+	TimerMatchSet(ESC_TIMER(0), TIMER_A_OR_B(0), thrust_to_value(ch0));
+	TimerMatchSet(ESC_TIMER(1), TIMER_A_OR_B(1), thrust_to_value(ch1));
+	TimerMatchSet(ESC_TIMER(2), TIMER_A_OR_B(2), thrust_to_value(ch2));
+	TimerMatchSet(ESC_TIMER(3), TIMER_A_OR_B(3), thrust_to_value(ch3));
 }

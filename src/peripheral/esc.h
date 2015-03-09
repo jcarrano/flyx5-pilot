@@ -2,9 +2,10 @@
 #define ESC_H_
 
 #include <stdint.h>
+#include <fixed_point/types.h>
 
-#define ESC_MIN_VALUE 0x00
-#define ESC_MAX_VALUE 0xFFFF
+static const frac ESC_MIN_VALUE = {0};
+static const frac ESC_MAX_VALUE = {FRAC_MAX_V};
 
 /**
  * Initialize the ESC control subsystem.
@@ -13,12 +14,26 @@
  */
 void esc_Init(void);
 
-// chx is read as a percentage, with the maximum being 0xFFFF
-void esc_SetValues(uint32_t ch0, uint32_t ch1, uint32_t ch2, uint32_t ch3);
+/**
+ * Set the motor thrusts.
+ *
+ * DO NOT USE NEGATIVE VALUES!!!.
+ */
+void esc_SetThrust(frac ch0, frac ch1, frac ch2, frac ch3);
 
 /**
  * Enable the PWM outputs.
  */
 void esc_EnableOutput(void);
+
+/**
+ * Set all output to the minumum.
+ */
+#define	esc_ToMinimum() esc_SetThrust(ESC_MIN_VALUE, ESC_MIN_VALUE, ESC_MIN_VALUE, ESC_MIN_VALUE)
+
+/**
+ * Set all output to the maximum.
+ */
+#define	esc_ToMaximum() esc_SetThrust(ESC_MAX_VALUE, ESC_MAX_VALUE, ESC_MAX_VALUE, ESC_MAX_VALUE)
 
 #endif /* ESC_H_ */
