@@ -87,7 +87,7 @@ void dmu_PrintRawMeasurements(struct dmu_samples_T* dmuSamples);
 //! @param enable Set to \b true to enable offset correction.
 //! @note dmu_CalculateOffset shall be called before applying correction; offset is set to 0 by default.
 
-void dmu_SetOffsetCorrection(bool enable);
+void dmu_EnableOffsetCorrection(bool enable);
 
 //! Averages n samples to calculate gyro offset, and stores it into internal global variable.
 //! @param samplesCount number of samples to average.

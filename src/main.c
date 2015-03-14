@@ -83,10 +83,10 @@ void main_SetupCalibration(struct nlcf_state* statePtr);
 
 void readSuccess(void);
 void readFail(void);
-
+extern void init_failsafe();
 
 extern void dmu_PrintFormattedMeasurements(void);
-
+extern struct cal_output cal_correction;
 
 struct {
 	uint8_t readBuffer[1];
@@ -99,18 +99,19 @@ struct {
 
 void PrintMeters(int32_t meters);
 
-int main_test(void)
+int main_juani(void)
 {
     struct dmu_samples_T dmuSamples;
     struct nlcf_state state;
+
+    init_failsafe();
 
     main_Init();
 
     dmu_Init();
 
     nlcf_init(&state);
-
-    main_SetupCalibration(&state);
+    nlcf_apply_correction(&state, cal_correction);
 
     _puts("init done\n\r");
 
@@ -125,13 +126,14 @@ int main_test(void)
 
 	//UARTCharGet(BASE_PERIPH(UART_DEBUG));
 	bool offsetCorrection = true;
-	dmu_SetOffsetCorrection(offsetCorrection);
+	dmu_EnableOffsetCorrection(offsetCorrection);
 
 	int i = 0;
     while(1)
     {
     	if(dmu_PumpEvents(&dmuSamples))
     	{
+    		/*
     		if(i++ > SAMPLE_RATE)
     		{
     			UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dmuSamples.accel.x.v, dmuSamples.accel.y.v,
@@ -142,9 +144,10 @@ int main_test(void)
     		if(UARTCharGetNonBlocking(BASE_PERIPH(UART_DEBUG)) == 't')
     		{
     			offsetCorrection = !offsetCorrection;
-    			dmu_SetOffsetCorrection(offsetCorrection);
+    			dmu_EnableOffsetCorrection(offsetCorrection);
     		}
-    		/*
+    		*/
+
     		nlcf_process(&state, dmuSamples.gyro, dmuSamples.accel, NULL);
 
 			quat q_est = dq_to_q(state.q);
@@ -154,7 +157,7 @@ int main_test(void)
 			UARTputraw16(q_est.v.x.v);
 			UARTputraw16(q_est.v.y.v);
 			UARTputraw16(q_est.v.z.v);
-    		 */
+
 
 			//UARTprintf("%d %d %d %d, ", q_est.r.v, q_est.v.x.v, q_est.v.y.v, q_est.v.z.v);
 			//dmu_PrintRawMeasurements(&dmuSamples);
@@ -251,93 +254,6 @@ ConfigureUART(void)
     UARTStdioConfig(0, 115200, 16000000);
 }
 
-void main_SetupCalibration(struct nlcf_state* statePtr)
-{
-	struct dmu_samples_T dmuSamples;
-
-	if (!PIN_ACTIVE(BUTTON_2))
-	{
-		return;
-	}
-
-	_puts("Entered calibration mode. Release button to start calibration.\n\r");
-
-	while(PIN_ACTIVE(BUTTON_2))
-		;
-
-	_puts("Press BTN2 to trigger measures.");
-
-	uint8_t measurementCount = 0;
-
-	while (measurementCount < 2)
-	{
-		struct cal_output calibrationOutput;
-		quat calibration[2];
-
-    	if(dmu_PumpEvents(&dmuSamples))
-    	{
-			nlcf_process(statePtr, dmuSamples.gyro, dmuSamples.accel, NULL);
-    	}
-
-		if(!PIN_ACTIVE(BUTTON_2))
-		{
-			continue;
-		}
-		/*
-		if (userInput == 'c')
-		{
-			quat aux;
-			asm sei;
-			aux = controlData.QEst;
-			asm cli;
-			printf("Current quaternion: %d %d %d %d\n", Q_COMPONENTS(aux));
-			continue;
-		}
-
-		if (userInput != 'm')
-			continue;
-*/
-		if (measurementCount == 0)
-		{
-			calibration[0] = dq_to_q(statePtr->q);			// state is not written during interrupts, no need of "cli"
-			_puts("First measurement done\n\r");
-		}
-
-		else if (measurementCount == 1)
-		{
-			calibration[1] = dq_to_q(statePtr->q);
-			_puts("Second measurement done\n\r");
-		}
-
-		measurementCount++;
-
-		if (measurementCount == 2)
-		{
-			calibrationOutput = att_calibrate(calibration[0], calibration[1]);
-			UARTprintf("Cal output: %d\n\r", calibrationOutput.quality);
-			UARTprintf("Correction: %d %d %d %d\n\r", calibrationOutput.correction.r.v, calibrationOutput.correction.v.x.v,
-					calibrationOutput.correction.v.y.v, calibrationOutput.correction.v.z.v);
-
-			if (calibrationOutput.quality == CAL_BAD)
-			{
-				measurementCount = 1;	// Stay looping second measurement.
-				_puts("Calibrate again\n\r");
-			}
-
-			nlcf_apply_correction(statePtr, calibrationOutput);
-		}
-
-		SysCtlDelay(SysCtlClockGet() / 3 / 3);		// Delay for relasing button.
-	}
-
-	_puts("Press BTN2 to continue.");
-
-	while(!PIN_ACTIVE(BUTTON_2))
-		;
-
-	return;
-}
-
 void readSuccess(void)
 {
 	UARTprintf("Read Success. Value: %x\n\r", (int)main_data.readBuffer[0]);
@@ -347,4 +263,3 @@ void readFail(void)
 {
 	UARTprintf("Read Fail.\n\r");
 }
-
