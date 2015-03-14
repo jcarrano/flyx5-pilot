@@ -146,7 +146,7 @@ int main(void)
 void esc_calibration()
 {
     if (!running_under_debugger() && PIN_ACTIVE(BUTTON_1)) {
-        esc_SetValues(ESC_MAX_VALUE,ESC_MAX_VALUE,ESC_MAX_VALUE,ESC_MAX_VALUE);
+        esc_ToMaximum();
         esc_EnableOutput();
 
         buzzer_load_score(music_calibration_escs_enter);
@@ -155,7 +155,7 @@ void esc_calibration()
             ;
 
         buzzer_load_score(music_calibration_escs_step);
-        esc_SetValues(ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE);
+        esc_ToMinimum();
     }
 }
 
@@ -173,7 +173,7 @@ program_mode idle_process()
     program_mode destination;
     sbutton arm_button;
 
-    esc_SetValues(ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE);
+    esc_ToMinimum();
     esc_EnableOutput();
 
     sbutton_init(&arm_button);
@@ -211,7 +211,7 @@ program_mode imu_calibration()
 {
     struct dmu_samples_T imu_samples;
 
-    esc_SetValues(ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE);
+    esc_ToMinimum();
 
     buzzer_load_score(music_enter_calibration);
 
@@ -229,13 +229,6 @@ program_mode imu_calibration()
     }
 
     return GOTO_IDLE;
-}
-
-static void _esc_set(frac motor_thrusts[4])
-{
-#define _t2t(i) (((uint32_t)(motor_thrusts[i].v))*2)
-	esc_SetValues(_t2t(0), _t2t(1),_t2t(2),_t2t(3));
-#undef _t2t
 }
 
 program_mode flight_control()
@@ -271,7 +264,8 @@ program_mode flight_control()
 
             control_mixer4(setpoint.altitude, torques, motor_thrusts);
 
-            _esc_set(motor_thrusts);
+            esc_SetThrust(motor_thrusts[0], motor_thrusts[1],
+                            motor_thrusts[2], motor_thrusts[3]);
 
             if (s_hold(&arm_button, ARM_HOLD_TIME_MS, joystick_check_arm(joystick_snapshot))) {
 				break;
@@ -279,7 +273,7 @@ program_mode flight_control()
     	}
     }
 
-    esc_SetValues(ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE,ESC_MIN_VALUE);
+    esc_ToMinimum();
     buzzer_load_score(music_unarmed);
 
     return GOTO_IDLE;
