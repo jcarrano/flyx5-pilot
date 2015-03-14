@@ -21,8 +21,10 @@ void dmu_InitFailed(void);
 void dmu_StagesInit();
 void dmu_CommFailed(void);
 void dmu_SamplesReady(void);
+void dmu_GetMeasurements(void);
 void dmu_AddSamples(struct dmu_longSamples_T * const acc, const struct dmu_samples_T* samples);
 void dmu_DivideLongSamples(struct dmu_longSamples_T * const acc, int32_t divider);
+void dmu_SubstractOffset(struct dmu_samples_T* samples);
 
 #define dmu_Send(eotCB, commFailedCB, toWrite, sendBuffer)										\
 	(iic_Send (DMU_MODULE_NUMBER, DMU_ADDRESS, eotCB, commFailedCB, toWrite, sendBuffer) )
@@ -45,6 +47,7 @@ void dmu_Init()
 
 	dmu_data.stage = 0;
 	dmu_data.status = DMU_IDLE;
+	dmu_data.correctOffset = false;
 
 	iic_Init(DMU_MODULE_NUMBER);
 	gpio_Init(DMU_INT_PORT_NUM, DMU_INT_PIN, GPIO_RISING_EDGE);
@@ -118,6 +121,11 @@ bool dmu_PumpEvents(struct dmu_samples_T* samplesPtr)
 			// No sample must be taken during data copy.
 			*samplesPtr = _parse_frame();
 
+			if(dmu_data.correctOffset)
+			{
+				dmu_SubstractOffset(samplesPtr);
+			}
+
 			samplesReady = true;
 			dmu_data.status = DMU_IDLE;
 			break;
@@ -131,7 +139,6 @@ bool dmu_PumpEvents(struct dmu_samples_T* samplesPtr)
 
 void dmu_StagesInit()
 {
-
 	switch (dmu_data.stage)
 	{
 	case 0:
@@ -366,4 +373,16 @@ void dmu_DivideLongSamples(struct dmu_longSamples_T * const acc, int32_t divider
 	acc->gyro.x.v /= divider;
 	acc->gyro.y.v /= divider;
 	acc->gyro.z.v /= divider;
+}
+
+void dmu_SetOffsetCorrection(bool enable)
+{
+	dmu_data.correctOffset = enable;
+}
+
+void dmu_SubstractOffset(struct dmu_samples_T* samples)
+{
+	samples->gyro.x.v -= dmu_offset.gyro.x.v;
+	samples->gyro.y.v -= dmu_offset.gyro.y.v;
+	samples->gyro.z.v -= dmu_offset.gyro.z.v;
 }

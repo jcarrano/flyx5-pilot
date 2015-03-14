@@ -99,7 +99,7 @@ struct {
 
 void PrintMeters(int32_t meters);
 
-int main_juani(void)
+int main_test(void)
 {
     struct dmu_samples_T dmuSamples;
     struct nlcf_state state;
@@ -124,6 +124,8 @@ int main_juani(void)
 			dmu_offset.accel.z.v, dmu_offset.gyro.x.v, dmu_offset.gyro.y.v, dmu_offset.gyro.z.v);
 
 	//UARTCharGet(BASE_PERIPH(UART_DEBUG));
+	bool offsetCorrection = true;
+	dmu_SetOffsetCorrection(offsetCorrection);
 
 	int i = 0;
     while(1)
@@ -135,6 +137,12 @@ int main_juani(void)
     			UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dmuSamples.accel.x.v, dmuSamples.accel.y.v,
 							dmuSamples.accel.z.v, dmuSamples.gyro.x.v, dmuSamples.gyro.y.v, dmuSamples.gyro.z.v);
     			i = 0;
+    		}
+
+    		if(UARTCharGetNonBlocking(BASE_PERIPH(UART_DEBUG)) == 't')
+    		{
+    			offsetCorrection = !offsetCorrection;
+    			dmu_SetOffsetCorrection(offsetCorrection);
     		}
     		/*
     		nlcf_process(&state, dmuSamples.gyro, dmuSamples.accel, NULL);

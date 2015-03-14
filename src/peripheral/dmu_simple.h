@@ -35,9 +35,11 @@ enum DMU_DATA_FRAME {
 	DMU_FRAME_N_ELEM
 };
 
+//!  Main dmu data struct. Contains all the data needed for the dmu to work.
 struct dmu_data_T
 {
 	bool init;
+	bool correctOffset;
 
 	iic_ptr userCb;
 	uint8_t stage;
@@ -49,6 +51,7 @@ struct dmu_data_T
 	uint8_t _frame_buffer[DMU_FRAME_N_ELEM][DMU_SAMPLE_BYTES];
 };
 
+//! Data type to store processed samples from dmu.
 struct dmu_samples_T
 {
 	vec3_s16 accel;
@@ -74,9 +77,21 @@ void dmu_Init(void);
 
 bool dmu_PumpEvents(struct dmu_samples_T* samplesPtr);
 
-void dmu_GetMeasurements(void);
+//! Print measurements as text, each one spaced and the whole set terminated by a comma.
+//! @param samplesPtr pointer to the samples to print.
+//! @note samples shall not be edited during interrupts to use this function safely.
 
 void dmu_PrintRawMeasurements(struct dmu_samples_T* dmuSamples);
+
+//! Enables or disables offset correction in dmu_PumpEvents.
+//! @param enable Set to \b true to enable offset correction.
+//! @note dmu_CalculateOffset shall be called before applying correction; offset is set to 0 by default.
+
+void dmu_SetOffsetCorrection(bool enable);
+
+//! Averages n samples to calculate gyro offset, and stores it into internal global variable.
+//! @param samplesCount number of samples to average.
+//! @note dmu has to be initialized before calculating offset.
 
 void dmu_CalculateOffset(uint32_t samplesCount);
 
