@@ -375,7 +375,7 @@ void dmu_DivideLongSamples(struct dmu_longSamples_T * const acc, int32_t divider
 	acc->gyro.z.v /= divider;
 }
 
-void dmu_SetOffsetCorrection(bool enable)
+void dmu_EnableOffsetCorrection(bool enable)
 {
 	dmu_data.correctOffset = enable;
 }

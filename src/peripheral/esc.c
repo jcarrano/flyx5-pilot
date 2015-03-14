@@ -8,6 +8,7 @@
 #include "driverlib/pin_map.h"
 
 #include "inc/hw_memmap.h"
+#include "fixed_point/fixed_point.h"
 
 #define ESC_TIMER_0 		WTIMER2_BASE
 #define ESC_TIMER_1 		WTIMER3_BASE

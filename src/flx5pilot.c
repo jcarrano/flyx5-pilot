@@ -81,6 +81,7 @@ program_mode idle_process();
 void esc_calibration();
 
 struct nlcf_state Estimator_State;
+extern struct cal_output cal_correction;
 
 int main(void)
 {
@@ -122,6 +123,7 @@ int main(void)
     esc_calibration();
 
     nlcf_init(&Estimator_State);
+    nlcf_apply_correction(&Estimator_State, cal_correction);
 
     while (1) {
         switch (pmode) {
@@ -213,10 +215,20 @@ program_mode imu_calibration()
 
     esc_ToMinimum();
 
+    bool calibrationMode = qset_TryDmuCalibration(false, &Estimator_State);
+
+    if(!calibrationMode)
+    {
+    	return GOTO_IDLE;
+    }
+
     buzzer_load_score(music_enter_calibration);
 
-    nlcf_init(&Estimator_State);
-    bool calibrationMode = qset_TryDmuCalibration(false, &Estimator_State);
+    nlcf_reset_correction(&Estimator_State);
+
+    bool offsetCorrectionActual = dmu_data.correctOffset;
+
+    dmu_EnableOffsetCorrection(false);
 
     while(calibrationMode)
     {
@@ -227,6 +239,8 @@ program_mode imu_calibration()
 			calibrationMode = qset_TryDmuCalibration(calibrationMode, &Estimator_State);
     	}
     }
+
+    dmu_EnableOffsetCorrection(offsetCorrectionActual);
 
     return GOTO_IDLE;
 }
@@ -304,6 +318,8 @@ void init_peripherals()
 	err_Init(NULL, _puts, NULL);
 	rti_Init();
     dmu_Init();
+    dmu_CalculateOffset(DMU_OFFSET_SAMPLES);
+    dmu_EnableOffsetCorrection(true);
     joy_Init();
     esc_Init();
     //usound_Init();

@@ -47,7 +47,9 @@
 #ifdef MAIN_CALIBRATE
 static quat Q_Correction = UNIT_QUAT;
 #else
-static quat Q_Correction = {{-785}, {{-23300}, {-23025}, {-374}}};
+#define _q_correction {{-300}, {{-1601}, {-32728}, {-60}}}
+static quat Q_Correction = _q_correction;
+struct cal_output cal_correction = {CAL_EXCELLENT, _q_correction};
 #endif
 
 static inline vec3 z_dir(quat q)
@@ -91,8 +93,8 @@ void nlcf_process(struct nlcf_state *state, vec3 gyro, vec3 accel, vec3 *gyro_ou
 	frac err;
 
 	/* Convert measurements to body reference frame */
-	gyro = q_rot(Q_Correction, gyro);
-	accel = q_rot(Q_Correction, accel);
+	gyro = q_rot(state->correction, gyro);
+	accel = q_rot(state->correction, accel);
 
 	if (gyro_out != NULL)
 		*gyro_out = gyro;

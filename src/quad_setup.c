@@ -29,22 +29,6 @@ struct {
 void _setAntiBounce(void* data,  rti_time period, rti_id id);
 
 
-void qset_TryEscCalibration(void)
-{
-    if(PIN_ACTIVE(ESC_SETUP_BUTTON))
-    {
-    	esc_SetValues(ESC_MAX_VALUE, ESC_MAX_VALUE, ESC_MAX_VALUE, ESC_MAX_VALUE);
-
-    	// Wait for ESCs to buzz, then release button 1.
-    	while(PIN_ACTIVE(ESC_SETUP_BUTTON))
-    		;
-
-    	esc_SetValues(ESC_MIN_VALUE, ESC_MIN_VALUE, ESC_MIN_VALUE, ESC_MIN_VALUE);
-    }
-
-    return;
-}
-
 bool qset_TryDmuCalibration(bool calibrationMode, struct nlcf_state* statePtr)
 {
 
@@ -128,7 +112,7 @@ bool qset_TryDmuCalibration(bool calibrationMode, struct nlcf_state* statePtr)
 
 		if (calibrationOutput.quality != CAL_BAD) {
 			nlcf_apply_correction(statePtr, calibrationOutput);
-			_puts("Calibration applied.\n\r");
+			_puts("Calibration applied. Press BTN2 to end.\n\r");
 		}
 
 	}
