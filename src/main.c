@@ -114,17 +114,30 @@ int main_juani(void)
 
     _puts("init done\n\r");
 
+    _puts("starting offset calculation...\n\r");
 
+    dmu_CalculateOffset(DMU_OFFSET_SAMPLES);
+
+    _puts("Done\n\r");
+
+	UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dmu_offset.accel.x.v, dmu_offset.accel.y.v,
+			dmu_offset.accel.z.v, dmu_offset.gyro.x.v, dmu_offset.gyro.y.v, dmu_offset.gyro.z.v);
+
+	//UARTCharGet(BASE_PERIPH(UART_DEBUG));
+
+	int i = 0;
     while(1)
     {
-
     	if(dmu_PumpEvents(&dmuSamples))
     	{
-				/*
-			UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dmuSamples.accel.x.v, dmuSamples.accel.y.v,
+    		if(i++ > SAMPLE_RATE)
+    		{
+    			UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dmuSamples.accel.x.v, dmuSamples.accel.y.v,
 							dmuSamples.accel.z.v, dmuSamples.gyro.x.v, dmuSamples.gyro.y.v, dmuSamples.gyro.z.v);
-			*/
-			nlcf_process(&state, dmuSamples.gyro, dmuSamples.accel, NULL);
+    			i = 0;
+    		}
+    		/*
+    		nlcf_process(&state, dmuSamples.gyro, dmuSamples.accel, NULL);
 
 			quat q_est = dq_to_q(state.q);
 
@@ -133,7 +146,7 @@ int main_juani(void)
 			UARTputraw16(q_est.v.x.v);
 			UARTputraw16(q_est.v.y.v);
 			UARTputraw16(q_est.v.z.v);
-
+    		 */
 
 			//UARTprintf("%d %d %d %d, ", q_est.r.v, q_est.v.x.v, q_est.v.y.v, q_est.v.z.v);
 			//dmu_PrintRawMeasurements(&dmuSamples);

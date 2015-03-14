@@ -3,25 +3,36 @@
 #include "../debug_tools/debug.h"
 #include "../utils/uartstdio.h"
 #include "../xdriver/gpio_interface.h"
+#include "../Misc/error.h"
 
 struct dmu_data_T dmu_data;
 
+struct dmu_samples_T dmu_offset = {VEC0, VEC0};
+
 iic_commData_T* dmu_commDataPtr = &(iic_commData[DMU_MODULE_NUMBER]);
+
+struct dmu_longSamples_T
+{
+	vec3_s32 accel;
+	vec3_s32 gyro;
+};
 
 void dmu_InitFailed(void);
 void dmu_StagesInit();
 void dmu_CommFailed(void);
 void dmu_SamplesReady(void);
+void dmu_AddSamples(struct dmu_longSamples_T * const acc, const struct dmu_samples_T* samples);
+void dmu_DivideLongSamples(struct dmu_longSamples_T * const acc, int32_t divider);
 
 #define dmu_Send(eotCB, commFailedCB, toWrite, sendBuffer)										\
-	(iic_Send (DMU_MODULE_NUMBER, MPU_ADDRESS, eotCB, commFailedCB, toWrite, sendBuffer) )
+	(iic_Send (DMU_MODULE_NUMBER, DMU_ADDRESS, eotCB, commFailedCB, toWrite, sendBuffer) )
 
 #define dmu_ReceiveFromRegister(regAddress, eotCB, commFailedCB, toRead, receiveBuffer)			\
-	(iic_ReceiveFromRegister (DMU_MODULE_NUMBER, regAddress, MPU_ADDRESS, eotCB, 				\
+	(iic_ReceiveFromRegister (DMU_MODULE_NUMBER, regAddress, DMU_ADDRESS, eotCB, 				\
 			commFailedCB, toRead, receiveBuffer) )
 
 #define dmu_ReceiveSamples(commFailedCB, toRead, receiveBuffer)												\
-	(iic_ReceiveFromRegister (DMU_MODULE_NUMBER, ADD_ACCEL_OUT, MPU_ADDRESS, dmu_SamplesReady, 				\
+	(iic_ReceiveFromRegister (DMU_MODULE_NUMBER, ADD_ACCEL_OUT, DMU_ADDRESS, dmu_SamplesReady, 				\
 			commFailedCB, toRead, receiveBuffer) )
 
 void dmu_Init()
@@ -38,7 +49,6 @@ void dmu_Init()
 	iic_Init(DMU_MODULE_NUMBER);
 	gpio_Init(DMU_INT_PORT_NUM, DMU_INT_PIN, GPIO_RISING_EDGE);
 
-	_puts("stages start");
 	dmu_StagesInit();
 
 	while (dmu_data.init == false)
@@ -302,4 +312,58 @@ void dmu_PrintFormattedMeasurements(struct dmu_samples_T* dmuSamples)
 void dmu_CommFailed(void)
 {
 	UARTprintf("dmu comm fail\n\r");
+}
+
+void dmu_CalculateOffset(uint32_t samplesCount)
+{
+	if (dmu_data.init == false)
+	{
+		err_Throw("DMU not initialized while trying to calculate offset.");
+		return;
+	}
+
+	uint32_t i = 0;
+	struct dmu_samples_T samples;
+	struct dmu_longSamples_T accumulator = {VEC0, VEC0};
+
+	while(i < samplesCount)
+	{
+		if(dmu_PumpEvents(&samples))
+		{
+			dmu_AddSamples(&accumulator, &samples);
+			i++;
+		}
+	}
+
+	dmu_DivideLongSamples(&accumulator, samplesCount);
+
+	dmu_offset.accel.x.v = (int16_t)accumulator.accel.x.v;
+	dmu_offset.accel.y.v = (int16_t)accumulator.accel.y.v;
+	dmu_offset.accel.z.v = (int16_t)accumulator.accel.z.v;
+
+	dmu_offset.gyro.x.v = (int16_t)accumulator.gyro.x.v;
+	dmu_offset.gyro.y.v = (int16_t)accumulator.gyro.y.v;
+	dmu_offset.gyro.z.v = (int16_t)accumulator.gyro.z.v;
+}
+
+void dmu_AddSamples(struct dmu_longSamples_T * const acc, const struct dmu_samples_T* samples)
+{
+	acc->accel.x.v += samples->accel.x.v;
+	acc->accel.y.v += samples->accel.y.v;
+	acc->accel.z.v += samples->accel.z.v;
+
+	acc->gyro.x.v += samples->gyro.x.v;
+	acc->gyro.y.v += samples->gyro.y.v;
+	acc->gyro.z.v += samples->gyro.z.v;
+}
+
+void dmu_DivideLongSamples(struct dmu_longSamples_T * const acc, int32_t divider)
+{
+	acc->accel.x.v /= divider;
+	acc->accel.y.v /= divider;
+	acc->accel.z.v /= divider;
+
+	acc->gyro.x.v /= divider;
+	acc->gyro.y.v /= divider;
+	acc->gyro.z.v /= divider;
 }

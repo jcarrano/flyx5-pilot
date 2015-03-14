@@ -7,9 +7,11 @@
 #include "dmu_6500.h"
 #include "../flyx5_hw.h"
 
-#define MPU_LOW_BIT 0x01
+#define DMU_OFFSET_SAMPLES 1000
 
-#define MPU_ADDRESS (0b01101000 | (MPU_LOW_BIT))
+#define DMU_LOW_BIT 0x01
+
+#define DMU_ADDRESS (0b01101000 | (DMU_LOW_BIT))
 #define DMU_MODULE_NUMBER BUS_DMU_NUM
 
 #define DMU_INT_PORT_NUM GPIO_E
@@ -54,13 +56,28 @@ struct dmu_samples_T
 };
 
 extern struct dmu_data_T dmu_data;
+extern struct dmu_samples_T dmu_offset;
+
+//! Init Digital Motion Unit.
+//! Default configuration set in dmu_6500.h:
+//! * 1 ms sample time
+//! * Data ready interrupt enabled - pulse output
+//! * Maximum scale for Gyro and Accel
 
 void dmu_Init(void);
+
+//! Trigger dmu events by polling in user application.
+//! This function starts communication with DMU if samples are available in sensor, or stores a copy of received samples
+//! in samplesPtr. The function does nothing if there are no samples available in sensor/ memory, or if a communication is going on.
+//! @param samplesPtr pointer to struct to copy samples if available.
+//! @return Returns \b true if there were samples just received from sensor.
 
 bool dmu_PumpEvents(struct dmu_samples_T* samplesPtr);
 
 void dmu_GetMeasurements(void);
 
 void dmu_PrintRawMeasurements(struct dmu_samples_T* dmuSamples);
+
+void dmu_CalculateOffset(uint32_t samplesCount);
 
 #endif 	// _DMUSIMPLE_H_INCLUDED_
