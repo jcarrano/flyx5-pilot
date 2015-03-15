@@ -12,17 +12,6 @@
 #include "../macro_magic.h"
 #include "inc/hw_memmap.h"
 
-/*
- * Registers/ pins used:
- * GPIO: SYSCTL_PERIPH_I2C_GPIOB
- * I2C Peripheral: SYSCTL_PERIPH_I2C0
- * SDA: GPIO_PB3_I2C0SDA	PORTB Pin 3
- * SCL: GPIO_PB2_I2C0SCL 	PORTB Pin 2
- */
-
-#define IIC_MODULE I2C0
-#define IIC_SINGLE_MODULE_BASE GLUE(IIC_MODULE, _BASE)
-
 enum{
 	IIC_MODULE_0,
 	IIC_MODULE_1,
@@ -58,29 +47,16 @@ typedef struct {
 
 } iic_commData_T;
 
-
 extern iic_commData_T iic_commData[I2C_MODULE_QTY];
-
-#if (IIC_MODULE == I2C0)
-
-#define IIC_PORT_ID B
-
-#define IIC_SDA GPIO_PB3_I2C0SDA
-#define IIC_SDA_PIN 3
-
-#define IIC_SCL GPIO_PB2_I2C0SCL
-#define IIC_SCL_PIN 2
-
-#endif
 
 #define IIC_GPIO_NUMBER GLUE(GPIO, IIC_PORT_ID)
 #define IIC_PORT GLUE(PORT, IIC_PORT_ID)
 
 
-
-
+//! Init target I2C module.
+//! SCL & SDA pins are configured as part of initialization.
+//! @param moduleNumber iic module defined in enum (IIC_MODULE_X)
 void iic_Init(uint8_t moduleNumber);
-
 
 
 //! Send message to target device, and execute action afterwards.
@@ -106,9 +82,21 @@ void iic_Send(uint8_t moduleNumber, uint8_t slaveAddress, iic_userAction eotCB, 
 //! @param toRead: quantity of bytes to read.
 //! @param sendBuffer: pointer to memory block to write the received data.
 //
-//	@note \b sendBuffer can be \b NULL; in that case the data received will be stored in iic_commData.data buffer.
+//!	@note \b sendBuffer can be \b NULL; in that case the data received will be stored in iic_commData.data buffer.
 //
 void iic_ReceiveFromRegister (uint8_t moduleNumber, uint8_t regAddress, uint8_t slaveAddress, iic_userAction eotCB, iic_userAction commFailedCB, uint8_t toRead, uint8_t* receiveBuffer);
+
+//! Receive message from target device, and execute action afterwards. The device shall point to target register before this
+//! function is called.
+//!
+//! @param moduleNumber: module number to be used [0 - 3].
+//! @param slaveAddress: 7-bit right-aligned direction to send data.
+//! @param eotCB: function to call after transmission is completed correctly.
+//! @param commFailedCB: Error handler function.
+//! @param toRead: quantity of bytes to read.
+//! @param sendBuffer: pointer to memory block to write the received data.
+//
+//!	@note \b sendBuffer can be \b NULL; in that case the data received will be stored in iic_commData.data buffer.
 
 void iic_Receive (uint8_t moduleNumber, uint8_t slaveAddress, iic_userAction eotCB, iic_userAction commFailedCB, uint8_t toRead, uint8_t* receiveBuffer);
 

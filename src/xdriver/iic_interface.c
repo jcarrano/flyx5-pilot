@@ -39,6 +39,9 @@
 #define I2C_READ_OPERATION 1
 #define I2C_WRITE_OPERATION 0
 
+#define IIC_MODULE_SINGLE I2C0
+#define IIC_SINGLE_MODULE_BASE GLUE(IIC_MODULE_SINGLE, _BASE)
+
 typedef struct {
     iic_ptr currCB;
     iic_userAction eotCB;

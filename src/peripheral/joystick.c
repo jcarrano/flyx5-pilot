@@ -31,16 +31,16 @@
 #define INVERT_S(x, inverted) ((inverted != 0) ? (-x) : (x))
 
 #define YAW_MIN (89000)
-#define YAW_MAX (152000)
+#define YAW_MAX (151000)
 #define YAW_REST (120000)
 #define YAW_INVERTED 1
 
 #define PITCH_MIN (88000)
-#define PITCH_MAX (152000)
+#define PITCH_MAX (151000)
 #define PITCH_REST (120000)
 #define PITCH_INVERTED 0
 
-#define ROLL_MIN (89000)
+#define ROLL_MIN (88000)
 #define ROLL_MAX (152000)
 #define ROLL_REST (120000)
 #define ROLL_INVERTED 1
