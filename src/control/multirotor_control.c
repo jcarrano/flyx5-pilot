@@ -105,9 +105,9 @@ frac gammainv(frac T, frac t1, frac t2, frac t3)
 	frac r1;
 
 	r = f_to_ef(T);		/* Mix in the thrust */
-	r = ef_f_add(r, t1);	/* Add roll. */
-	r = ef_f_add(r, t2);	/* Pitch. */
-	r = ef_f_add(r, f_imul(t2, 2));	/* Yaw must be amplified. */
+	r = ef_f_add(r, f_imul(t1, 10));	/* Add roll. */
+	r = ef_f_add(r, f_imul(t2, 10));	/* Pitch. */
+	r = ef_f_add(r, f_imul(t3, 30));	/* Yaw must be amplified. */
 
 	r1 = ef_to_f(r);
 	return f_gt(r1, FZero)? r1 : FZero;

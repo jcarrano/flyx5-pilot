@@ -35,17 +35,25 @@
 #include "driverlib/uart.h"
 #include "utils/uartstdio.h"
 #include "driverlib/i2c.h"
+#include "driverlib/interrupt.h"
 
 #include "xdriver/iic_interface.h"
 #include "debug_tools/led.h"
 #include "peripheral/dmu_simple.h"
 #include "peripheral/altimeter_simple.h"
+#include "peripheral/joystick.h"
 #include "Misc/error.h"
 #include "debug_tools/stdio_simple.h"
 #include "peripheral/dmu_6500.h"
 #include "xdriver/gpio_interface.h"
 
 #include "control/nlcf.h"
+
+
+#define _MAIN_JOYSTICK_SETPOINT_PRINT_
+//#define _MAIN_OFFSET_CORRECTION_PRINT_
+//#define _MAIN_STATE_PRINT_
+
 
 void main_samplesReady(void);
 
@@ -99,7 +107,16 @@ struct {
 
 void PrintMeters(int32_t meters);
 
-int main_juani(void)
+static bool joystick_check_arm(joy_data_t joy)
+{
+    const int32_t low_thres = (INT16_MIN / 20) * 19;
+    const uint32_t low_thres_u = (UINT16_MAX / 20);
+
+    return joy.roll < low_thres && joy.pitch < low_thres &&
+            joy.yaw > -low_thres && joy.elev < low_thres_u;
+}
+
+int main_(void)
 {
     struct dmu_samples_T dmuSamples;
     struct nlcf_state state;
@@ -129,11 +146,18 @@ int main_juani(void)
 	dmu_EnableOffsetCorrection(offsetCorrection);
 
 	int i = 0;
+
+#ifdef 	_MAIN_JOYSTICK_SETPOINT_PRINT_
+	multirotor_setpoint setpoint;
+	joy_data_t joyData;
+	joy_Init();
+#endif
+
     while(1)
     {
     	if(dmu_PumpEvents(&dmuSamples))
     	{
-    		/*
+#ifdef _MAIN_OFFSET_CORRECTION_PRINT_
     		if(i++ > SAMPLE_RATE)
     		{
     			UARTprintf("ax: %d, ay: %d, az: %d\ngx: %d, gy: %d, gz: %d\n", dmuSamples.accel.x.v, dmuSamples.accel.y.v,
@@ -146,8 +170,9 @@ int main_juani(void)
     			offsetCorrection = !offsetCorrection;
     			dmu_EnableOffsetCorrection(offsetCorrection);
     		}
-    		*/
+#endif
 
+#ifdef _MAIN_STATE_PRINT_
     		nlcf_process(&state, dmuSamples.gyro, dmuSamples.accel, NULL);
 
 			quat q_est = dq_to_q(state.q);
@@ -157,8 +182,32 @@ int main_juani(void)
 			UARTputraw16(q_est.v.x.v);
 			UARTputraw16(q_est.v.y.v);
 			UARTputraw16(q_est.v.z.v);
+#endif
+
+#ifdef _MAIN_JOYSTICK_SETPOINT_PRINT_
 
 
+			IntMasterDisable();
+			joyData = joy_data;
+			IntMasterEnable();
+/*
+			setpoint = joystick_to_setpoint(joyData);
+
+			_puts("\x0E\x0C");
+			UARTputraw16(setpoint.attitude.r.v);
+			UARTputraw16(setpoint.attitude.v.x.v);
+			UARTputraw16(setpoint.attitude.v.y.v);
+			UARTputraw16(setpoint.attitude.v.z.v);
+*/
+
+			if (i++ > 50)
+			{
+				//UARTprintf("e: %d p: %d r: %d y: %d \n\r", joyData.elev, joyData.pitch, joyData.roll, joyData.yaw);
+				//UARTprintf("%d", (int)joystick_check_arm(joyData));
+				UARTprintf("r: %d p: %d y: %d e: %d\n\r", joyData.roll, joyData.pitch, joyData.yaw, joyData.elev);
+				i = 0;
+			}
+#endif
 			//UARTprintf("%d %d %d %d, ", q_est.r.v, q_est.v.x.v, q_est.v.y.v, q_est.v.z.v);
 			//dmu_PrintRawMeasurements(&dmuSamples);
     	}
@@ -185,7 +234,7 @@ void main_Init()
     //
     // Set the clocking to run directly from the crystal.
     //
-    SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | XTAL_SPEED |
+    SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | XTAL_SPEED |
                        SYSCTL_OSC_MAIN);
 
     //

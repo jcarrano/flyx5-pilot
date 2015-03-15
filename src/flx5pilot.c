@@ -79,6 +79,7 @@ program_mode flight_control();
 program_mode imu_calibration();
 program_mode idle_process();
 void esc_calibration();
+void init_soft();
 
 struct nlcf_state Estimator_State;
 extern struct cal_output cal_correction;
@@ -116,11 +117,12 @@ int main(void)
 
     init_peripherals();
 
+    esc_calibration();
+
+    init_soft();
     _puts("Peripherals done.\n\r");
 
     /* ************************** end initialization ************************ */
-
-    esc_calibration();
 
     nlcf_init(&Estimator_State);
     nlcf_apply_correction(&Estimator_State, cal_correction);
@@ -249,6 +251,7 @@ program_mode flight_control()
 {
 	sbutton arm_button;
     struct att_ctrl_state controller_state;
+    int i = 0;
 
     buzzer_load_score(music_armed);
 
@@ -275,7 +278,13 @@ program_mode flight_control()
             setpoint = joystick_to_setpoint(joystick_snapshot);
 
             torques = att_ctrl_step(&controller_state, setpoint.attitude, dq_to_q(Estimator_State.q), angle_rate);
-
+/*
+            if (i++ > 200)
+            {
+            	UARTprintf("r: %d p: %d y: %d\n\r", torques.x.v, torques.y.v, torques.z.v);
+            	i = 0;
+            }
+*/
             control_mixer4(setpoint.altitude, torques, motor_thrusts);
 
             esc_SetThrust(motor_thrusts[0], motor_thrusts[1],
@@ -318,11 +327,15 @@ void init_peripherals()
 	err_Init(NULL, _puts, NULL);
 	rti_Init();
     dmu_Init();
-    dmu_CalculateOffset(DMU_OFFSET_SAMPLES);
-    dmu_EnableOffsetCorrection(true);
     joy_Init();
     esc_Init();
     //usound_Init();
+}
+
+void init_soft()
+{
+    dmu_CalculateOffset(DMU_OFFSET_SAMPLES);
+    dmu_EnableOffsetCorrection(true);
 }
 
 

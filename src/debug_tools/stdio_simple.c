@@ -24,6 +24,8 @@
 #include "../flyx5_hw.h"
 #include "../common.h"
 
+void UARTUIntPut(uint32_t ui32Base, unsigned int x);
+
 void _puts(const char* str)
 {
 	UARTStringPut(BASE_PERIPH(UART_DEBUG), str);
