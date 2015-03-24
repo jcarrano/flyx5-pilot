@@ -87,6 +87,8 @@ vec3 att_ctrl_step(struct att_ctrl_state *state, quat setpoint, quat att,
 	return ev_to_v(ctrl_signal);
 }
 
+const frac Motor_Minimum = {FRAC_1_V/20};
+
 /**
  * Calculate a row of Gamma^-1 * T.
  *
@@ -107,10 +109,11 @@ frac gammainv(frac T, frac t1, frac t2, frac t3)
 	r = f_to_ef(T);		/* Mix in the thrust */
 	r = ef_f_add(r, f_imul(t1, 10));	/* Add roll. */
 	r = ef_f_add(r, f_imul(t2, 10));	/* Pitch. */
-	r = ef_f_add(r, f_imul(t3, 30));	/* Yaw must be amplified. */
+	r = ef_f_add(r, f_imul(t3, 15));	/* Yaw must be amplified. */
 
 	r1 = ef_to_f(r);
-	return f_gt(r1, FZero)? r1 : FZero;
+	//return f_gt(r1, FZero)? r1 : FZero;
+	return f_gt(r1, Motor_Minimum)? r1 : Motor_Minimum;
 }
 
 void control_mixer4(frac thrust, vec3 torque, frac motor_thrusts[4])

@@ -50,9 +50,9 @@ multirotor_setpoint joystick_to_setpoint(const joy_data_t data)
 	efrac norm2;
 	multirotor_setpoint newSetpoint;
 
-	stick.x = _frac(data.roll >> 2);
-	stick.y = _frac(data.pitch >> 2);
-	stick.z = _frac(data.yaw >> 2);
+	stick.x = _frac(data.roll / 4);
+	stick.y = _frac(-data.pitch / 4);
+	stick.z = _frac(data.yaw / 4);
 
 	throttle = _frac(data.elev);
 
