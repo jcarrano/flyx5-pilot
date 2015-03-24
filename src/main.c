@@ -46,11 +46,13 @@
 #include "debug_tools/stdio_simple.h"
 #include "peripheral/dmu_6500.h"
 #include "xdriver/gpio_interface.h"
-
+#include "peripheral/esc.h"
 #include "control/nlcf.h"
 
+#define MAIN_PUMP_SAMLES
 
-#define _MAIN_JOYSTICK_SETPOINT_PRINT_
+#define _MAIN_ESC_PROGRAM_
+//#define _MAIN_JOYSTICK_SETPOINT_PRINT_
 //#define _MAIN_OFFSET_CORRECTION_PRINT_
 //#define _MAIN_STATE_PRINT_
 
@@ -118,7 +120,6 @@ static bool joystick_check_arm(joy_data_t joy)
 
 int main_(void)
 {
-    struct dmu_samples_T dmuSamples;
     struct nlcf_state state;
 
     init_failsafe();
@@ -153,10 +154,21 @@ int main_(void)
 	joy_Init();
 #endif
 
+#ifdef _MAIN_ESC_PROGRAM_
+	joy_Init();
+	esc_Init();
+#endif
+
     while(1)
     {
+#ifdef MAIN_PUMP_SAMLES
+        struct dmu_samples_T dmuSamples;
     	if(dmu_PumpEvents(&dmuSamples))
     	{
+#ifdef _MAIN_ESC_PROGRAM_
+    	esc_SetThrust(_frac(joy_data.elev), _frac(joy_data.elev), _frac(joy_data.elev), _frac(joy_data.elev));
+    	UARTprintf("%d\n\r", (int32_t) _frac(joy_data.elev).v);
+#endif
 #ifdef _MAIN_OFFSET_CORRECTION_PRINT_
     		if(i++ > SAMPLE_RATE)
     		{
@@ -190,7 +202,7 @@ int main_(void)
 			IntMasterDisable();
 			joyData = joy_data;
 			IntMasterEnable();
-/*
+
 			setpoint = joystick_to_setpoint(joyData);
 
 			_puts("\x0E\x0C");
@@ -198,8 +210,8 @@ int main_(void)
 			UARTputraw16(setpoint.attitude.v.x.v);
 			UARTputraw16(setpoint.attitude.v.y.v);
 			UARTputraw16(setpoint.attitude.v.z.v);
-*/
 
+/*
 			if (i++ > 50)
 			{
 				//UARTprintf("e: %d p: %d r: %d y: %d \n\r", joyData.elev, joyData.pitch, joyData.roll, joyData.yaw);
@@ -207,10 +219,12 @@ int main_(void)
 				UARTprintf("r: %d p: %d y: %d e: %d\n\r", joyData.roll, joyData.pitch, joyData.yaw, joyData.elev);
 				i = 0;
 			}
+*/
 #endif
 			//UARTprintf("%d %d %d %d, ", q_est.r.v, q_est.v.x.v, q_est.v.y.v, q_est.v.z.v);
 			//dmu_PrintRawMeasurements(&dmuSamples);
     	}
+#endif // Pump samples
 
     }
 }

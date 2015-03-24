@@ -98,7 +98,8 @@ bool qset_TryDmuCalibration(bool calibrationMode, struct nlcf_state* statePtr)
 			break;
 		case CAL_UGLY:
 			buzzer_load_score(music_calibration_ugly);
-			_puts("Calibration ugly.\n\r");
+			setup_data.measurementCount = 1;
+			_puts("Calibration ugly. Calibrate again.\n\r");
 			break;
 		case CAL_GOOD:
 			buzzer_load_score(music_calibration_good);
@@ -110,7 +111,7 @@ bool qset_TryDmuCalibration(bool calibrationMode, struct nlcf_state* statePtr)
 			break;
 		}
 
-		if (calibrationOutput.quality != CAL_BAD) {
+		if ((calibrationOutput.quality != CAL_BAD) || (calibrationOutput.quality != CAL_UGLY)) {
 			nlcf_apply_correction(statePtr, calibrationOutput);
 			_puts("Calibration applied. Press BTN2 to end.\n\r");
 		}

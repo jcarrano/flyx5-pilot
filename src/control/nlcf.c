@@ -47,7 +47,7 @@
 #ifdef MAIN_CALIBRATE
 static quat Q_Correction = UNIT_QUAT;
 #else
-#define _q_correction {{-762}, {{973}, {32745}, {128}}}
+#define _q_correction {{-503}, {{820}, {32754}, {214}}}
 static quat Q_Correction = _q_correction;
 struct cal_output cal_correction = {CAL_EXCELLENT, _q_correction};
 #endif

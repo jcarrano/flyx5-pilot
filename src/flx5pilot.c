@@ -69,6 +69,7 @@ void __error__(char *filename, uint32_t line)
 #define CLK_TXT "Clock speed is: "
 
 #define ARM_HOLD_TIME_MS 3000
+#define ARM_THRESHOLD_DIV 20
 
 typedef enum GOTO_MODE {GOTO_IDLE, GOTO_IMU_CAL, GOTO_FLY} program_mode;
 
@@ -165,8 +166,8 @@ void esc_calibration()
 
 static bool joystick_check_arm(joy_data_t joy)
 {
-    const int32_t low_thres = (INT16_MIN / 20) * 19;
-    const uint32_t low_thres_u = (UINT16_MAX / 20);
+    const int32_t low_thres = (INT16_MIN / ARM_THRESHOLD_DIV) * 19;
+    const uint32_t low_thres_u = (UINT16_MAX / ARM_THRESHOLD_DIV);
 
     return joy.roll < low_thres && joy.pitch < low_thres &&
             joy.yaw > -low_thres && joy.elev < low_thres_u;
@@ -285,11 +286,16 @@ program_mode flight_control()
             	i = 0;
             }
 */
+
             control_mixer4(setpoint.altitude, torques, motor_thrusts);
 
-            esc_SetThrust(motor_thrusts[0], motor_thrusts[1],
+            if(joy_data.elev > (INT16_MAX/ ARM_THRESHOLD_DIV)){
+            	esc_SetThrust(motor_thrusts[0], motor_thrusts[1],
                             motor_thrusts[2], motor_thrusts[3]);
-
+            }
+            else{
+            	esc_SetThrust(ESC_MIN_VALUE, ESC_MIN_VALUE, ESC_MIN_VALUE, ESC_MIN_VALUE);
+            }
             if (s_hold(&arm_button, ARM_HOLD_TIME_MS, joystick_check_arm(joystick_snapshot))) {
 				break;
             }
